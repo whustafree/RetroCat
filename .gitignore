@@ -1,0 +1,30 @@
+build/
+out/
+dist/
+bin/
+gen/
+captures/
+classes/
+projectFilesBackup/
+project.properties
+.DS_Store
+.idea
+*.iml
+*.iws
+*.swp
+.cxx
+.gradle
+.externalNativeBuild
+local.properties
+release.jks
+
+# Keystores: nunca deben subirse. El debug.keystore venía trackeado en el upstream.
+*.keystore
+*.jks
+keystore.properties
+
+# Binarios de build. Las APKs se publican como releases de GitHub, no en el arbol.
+*.apk
+*.aab
+.kotlin/
+.cxx/
