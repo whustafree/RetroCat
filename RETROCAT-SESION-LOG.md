@@ -1,6 +1,6 @@
 # LOG DE SESIÓN — RetroCat (fork de Lemuroid)
 
-Última actualización: 2026-09-30
+Última actualización: 2026-10-01 (pre-reinicio)
 Proyecto: `C:\Users\whustaf\AppData\Local\Temp\opencode\lemuroid`
 APK entregada: `C:\Users\whustaf\AppData\Local\Temp\opencode\RetroCat-1.18.0.apk`
 
@@ -11,14 +11,58 @@ APK entregada: `C:\Users\whustaf\AppData\Local\Temp\opencode\RetroCat-1.18.0.apk
 
 ## 1. DÓNDE QUEDAMOS
 
+**ESTADO ACTUAL: log guardado. El usuario va a reiniciar el PC para activar el hypervisor.**
+
+> **Si estás leyendo esto después de un reinicio, este es el siguiente paso exacto:**
+> 1. `HypervisorPresent` debe ser `True`. Verificar:
+>    `(Get-CimInstance Win32_ComputerSystem).HypervisorPresent`
+> 2. Arrancar el emulador y esperar a que adb lo vea:
+>    `& "$env:ANDROID_HOME\emulator\emulator.exe" -avd RetroCat -no-snapshot`
+> 3. `adb wait-for-device` y luego `adb install -r RetroCat-1.18.0.apk`
+> 4. Capturas: `adb exec-out screencap -p > captura.png`
+> 5. Probar D-pad: `adb shell input keyevent 20` (abajo) y `19` (arriba), `21`/`22` izquierda/derecha
+>
+> Si el hypervisor sigue en False, el plan B es conectar el teléfono por USB: mejor resultado
+> porque se ve el mando real. Ver sección 1, "Bloqueo actual".
+
 El modo horizontal/Big Picture está implementado y compilando. Lo último que se hizo fue
 corregir el carrusel: los 2 primeros juegos salían corridos y se veía arte detrás.
 
-**Lo que falta de verdad:** nada está verificado en pantalla. No hay dispositivo ni emulador
-funcional en esta máquina. Todos los cambios visuales y de interacción están sin confirmar
-contra hardware real. Ese es el único bloqueo real.
+**Lo que falta de verdad:** nada está verificado en pantalla. Todos los cambios visuales y de
+interacción están sin confirmar contra hardware real. Ese es el único bloqueo real.
 
-### Pendientes
+### Bloqueo actual: falta hypervisor
+
+La máquina **sí** soporta virtualización (`VirtualizationFirmwareEnabled: True`, SLAT `True`,
+Windows 11 Pro). Lo que falta es el hypervisor: `HypervisorPresent: False`, sin servicios
+`vmcompute` ni `vmms`.
+
+El emulador muere sin él:
+- Sin aceleración: `x86_64 emulation currently requires hardware acceleration!`
+- Con `-accel off` (emulación por software): llega a imprimir el kernel pero el proceso muere
+  a los ~15s con **exit code `-1073741819` (0xC0000005, access violation)**. No es lentitud,
+  el qemu de 64 bits no puede con un guest de 64 bits sin aceleración.
+
+**El usuario está ejecutando esto en PowerShell como Administrador:**
+```
+Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All
+```
+Va en `[Running]`. Cuando termine tiene que **reiniciar** (`Restart Needed: True`, obligatorio:
+el hypervisor no carga sin reiniciar).
+
+Ojo con el nombre: `dism /featurename:Microsoft-Hyper-V-All` **NO existe** en Windows 11
+modern, da `0x800f080c`. El nombre válido es `Microsoft-Hyper-V` vía PowerShell, o el más
+liviano `HypervisorPlatform`. Los paquetes de Hyper-V sí están en CBS, así que es instalable.
+
+**Plan B, más rápido:** conectar el teléfono por USB con depuración activada y hacer
+`adb install -r`. Da mejor resultado que el emulador porque se ve el D-pad con un mando real.
+
+Tras el reinicio, verificar antes de intentar nada más:
+```
+HypervisorPresent: True
+```
+
+### Pendientes de código
 
 - [ ] **Probar en el teléfono** y decir qué se ve mal. Prioridad: carrusel, hero, D-pad,
       shelf de ContinuePlaying, notch/inset en landscape.
@@ -213,9 +257,30 @@ commitear** en el working tree. `lemuroid-cores` aparece como submódulo modific
 
 ## 9. CÓMO REANUDAR
 
-1. `cd C:\Users\whustaf\AppData\Local\Temp\opencode\lemuroid`
+### Repos
+
+| | |
+|---|---|
+| GitHub | https://github.com/whustafree/RetroCat (público, rama `main`) |
+| Release APK | https://github.com/whustafree/RetroCat/releases/tag/v1.18.0 |
+| Alias fijo | https://github.com/whustafree/RetroCat/releases/tag/apk-latest |
+| Carpeta publicada | `C:\Users\whustaf\AppData\Local\Temp\opencode\RetroCat` (copia limpia con git) |
+| Carpeta de trabajo | `C:\Users\whustaf\AppData\Local\Temp\opencode\lemuroid` (sin commitear) |
+
+El remoto `origin` de `lemuroid` es `Swordfish90/Lemuroid`, donde la cuenta **no tiene push**
+(`push: false`). Por eso se creó el repo nuevo. Para seguir trabajando de ahora en más, usar
+`opencode\RetroCat`.
+
+`lemuroid-cores` (632 MB de binarios) se dejó como puntero de submódulo, no se copió.
+Para compilar desde el repo nuevo:
+```
+git submodule update --init --recursive
+```
+
+### Pasos
+
+1. `cd C:\Users\whustaf\AppData\Local\Temp\opencode\RetroCat`
 2. Montar `JAVA_HOME` (ver sección 2) y compilar con los dos comandos ktlint separados.
-3. Copiar la APK a `C:\Users\whustaf\AppData\Local\Temp\opencode\RetroCat-1.18.0.apk`
-4. Instalar en el teléfono y reportar qué se ve mal.
-5. Al iterator bien: `.\gradlew.bat` con los comandos de la sección 2. NO hacer `reset` ni
-   descartar cambios; el árbol está sucio a propósito.
+3. Copiar la APK de `lemuroid-app\build\outputs\apk\freeDynamic\release\`
+4. `adb install -r` en el teléfono, reportar qué se ve mal.
+5. Al terminar bien: commit + `git push`. NO hacer `reset` ni descartar cambios a la ligera.
