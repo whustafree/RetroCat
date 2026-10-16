@@ -91,21 +91,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import com.swordfish.lemuroid.R
 import com.swordfish.lemuroid.app.mobile.shared.compose.ui.LemuroidEmptyView
 import com.swordfish.lemuroid.app.mobile.shared.compose.ui.RetroCatCoverImage
+import com.swordfish.lemuroid.app.mobile.shared.compose.ui.RetroCatGameTile
 import com.swordfish.lemuroid.app.shared.systems.MetaSystemInfo
 import com.swordfish.lemuroid.app.utils.games.GameUtils
 import com.swordfish.lemuroid.lib.library.MetaSystemID
 import com.swordfish.lemuroid.lib.library.db.entity.Game
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
-private val TILE_CORNER = 12.dp
 
 @Composable
 fun CatalogScreen(
@@ -342,7 +340,7 @@ private fun CatalogGrid(
                         horizontalArrangement = Arrangement.spacedBy(TILE_SPACING),
                     ) {
                         row.games.forEach { game ->
-                            CatalogGameTile(
+                            RetroCatGameTile(
                                 modifier = Modifier.weight(1f),
                                 game = game,
                                 subtitle =
@@ -784,60 +782,6 @@ private fun CarouselCover(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun CarouselDetails(
-    game: Game?,
-    subtitle: String?,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        // The title and the subtitle share one line so the 64dp strip does not push the covers
-        // further off screen on a short landscape display.
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                modifier = Modifier.weight(1f, fill = false),
-                text = game?.title.orEmpty(),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-
-            if (!subtitle.isNullOrBlank()) {
-                Text(
-                    modifier = Modifier.weight(1f, fill = false),
-                    text = subtitle,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-
-        FilledTonalButton(onClick = onClick, enabled = game != null) {
-            Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text(
-                modifier = Modifier.padding(start = 6.dp),
-                text = stringResource(R.string.catalog_play),
-            )
-        }
-    }
-}
-
 private sealed interface CatalogRow {
     val key: String
 
@@ -902,78 +846,6 @@ private fun LetterHeader(letter: String) {
             ),
         color = MaterialTheme.colorScheme.primary,
     )
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun CatalogGameTile(
-    modifier: Modifier = Modifier,
-    game: Game,
-    subtitle: String,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit,
-) {
-    Column(
-        modifier =
-            modifier
-                .clip(RoundedCornerShape(TILE_CORNER))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .combinedClickable(onClick = onClick, onLongClick = onLongClick),
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(3f / 4f),
-        ) {
-            RetroCatCoverImage(
-                modifier = Modifier.fillMaxSize(),
-                game = game,
-            )
-
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                0.55f to Color.Transparent,
-                                1f to Color.Black.copy(alpha = 0.85f),
-                            ),
-                        ),
-            )
-
-            Text(
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(horizontal = 8.dp, vertical = 8.dp),
-                text = game.title,
-                style =
-                    MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 12.sp,
-                    ),
-                color = Color.White,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-
-        if (subtitle.isNotBlank()) {
-            Text(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
-                text = subtitle,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
