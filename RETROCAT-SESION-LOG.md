@@ -388,3 +388,51 @@ URL del manifiesto; luego se puede cambiar con "Cambiar la URL del manifiesto".
 3. Descarga con `WorkManager` (sobrevive a que muera el proceso).
 4. Acción "jugar" tras instalar: buscar el `Game` por uri `file://` y llamar a `onGamePlay`.
 5. Los 6 ítems de UI acordados al principio (Big Picture en Inicio, filtro solo favoritos, etc.).
+
+---
+
+## 16-10-2026 — Tienda desde una carpeta de Google Drive (partes 1-3)
+
+Objetivo nuevo: que la tienda funcione **solo pegando el enlace** de una carpeta de Drive, sin
+escribir el manifiesto a mano, y que un botón de reescanear recoja los juegos añadidos después.
+
+### Cómo funciona (sin login ni API key)
+
+`https://drive.google.com/embeddedfolderview?id=<CARPETA>#list` devuelve el listado **entero** de
+una carpeta pública, incluso con miles de ficheros, como HTML plano. Con esa respuesta se genera el
+catálogo en memoria:
+
+- `DriveFolderListing` — parser del HTML (id, nombre, es carpeta) y de las entidades HTML.
+- `DriveCatalogLoader` — descarga la carpeta y **recorre subcarpetas** (profundidad máx 3, sin
+  revisitar ninguna) y junta los ficheros con su ruta.
+- `DriveManifestBuilder` — decide qué es un juego: la extensión tiene que estar en la tabla de la
+  propia app (`GameSystem.getSupportedExtensions()`), así que la tienda nunca ofrece algo que el
+  emulador no abra. El sistema sale de la extensión y, si es ambigua (`iso`), del nombre de la
+  carpeta. Las carátulas se emparejan por nombre normalizado (sin extensión, sin el `- ` inicial).
+- URLs: `uc?export=download&id=<FICHERO>` para el ROM y `thumbnail?id=<FICHERO>&sz=w512` para la
+  portada.
+
+### Descarga
+
+En ficheros grandes Google responde con una página HTML de confirmación en vez del fichero.
+`DriveDownloadPage` (lógica pura, con tests) detecta esa página por `Content-Type` y saca de ella
+la URL real, que el descargador sigue.
+
+### Verificado contra datos reales
+
+- Tu carpeta: **1036 ROMs y 1089 carátulas**, con **1036/1036 ROMs emparejadas** con su portada.
+- `thumbnail` devuelve 200 `image/png` (374 KB) y `uc?export=download` devuelve 200
+  `application/octet-stream` (8 MB, cabecera GBA válida). Sin página de aviso para ROMs de GBA.
+- 31 tests de la tienda en verde (`testFreeDynamicDebugUnitTest`).
+
+### Estado en git
+
+`cef6f54`, `2821abd`, `eca0e85` en `main` (subidos). APK: pendiente de publicar la versión
+`1.19.1` tras subir el tag.
+
+### Pendiente
+
+- Los 6 ítems de UI acordados al principio (siguen aplazados).
+- Google Sign-In (OAuth, `drive.readonly`) si algún día hace falta acceso a carpetas **privadas**;
+  recordar que usuario+contraseña no es posible.
+- Descarga con `WorkManager`.
