@@ -284,3 +284,107 @@ git submodule update --init --recursive
 3. Copiar la APK de `lemuroid-app\build\outputs\apk\freeDynamic\release\`
 4. `adb install -r` en el teléfono, reportar qué se ve mal.
 5. Al terminar bien: commit + `git push`. NO hacer `reset` ni descartar cambios a la ligera.
+
+> **OJO:** las secciones 1–9 son del trabajo anterior (UI/carrusel) y su "estado de git" quedó
+> obsoleto: aquel trabajo YA está commiteado y pusheado. El estado real está en la sección 10.
+
+---
+
+## 10. LA TIENDA (STORE) — estado actual
+
+Idea: un catálogo remoto (publicado en Drive, GitHub o cualquier host estático) que RetroCat
+lee para listar juegos, enseñar una vista previa y descargar el elegido a la biblioteca.
+
+### Estado de git (real)
+
+Rama `main` de https://github.com/whustafree/RetroCat, todo pusheado:
+
+| Commit | Qué |
+|---|---|
+| `bf9948d` | UI: unificar la rejilla con `RetroCatGameTile` y borrar duplicados muertos |
+| `8f14da3` | Store: modelo del manifiesto, parser y repositorio HTTP |
+| `69b09ba` | Store: descarga con progreso, verificación sha256 y carpeta destino |
+| `98a1861` | Store: pantalla con baldas, vista previa y acceso desde la barra |
+| `844c4bd` | Store: cortar la descarga usa `Job.ensureActive` |
+| `1fc81b8` | Store: traducción al español en un fichero UTF-8 aparte |
+
+Carpeta de trabajo: `C:\Users\whustaf\AppData\Local\Temp\opencode\RetroCat-review`
+(la carpeta `opencode\RetroCat` de las secciones anteriores quedó dañada; usar `-review`).
+
+### Paquete nuevo
+
+`lemuroid-app/src/main/java/com/swordfish/lemuroid/app/mobile/feature/store/`
+
+- `StoreManifest.kt` — modelo `@Serializable` + validación + agrupado por sistema.
+- `StoreRepository.kt` — descarga el JSON con OkHttp y lo parsea.
+- `StorePreferences.kt` — guarda la URL del manifiesto (SharedPreferences).
+- `StoreDownloader.kt` — baja el ROM a un `.part`, verifica sha256 y solo entonces renombra.
+- `StoreLibrary.kt` | `StoreViewModel.kt` | `StoreFormat.kt` | `StoreScreen.kt`
+- Tests JVM: `StoreManifestTest.kt`, `StoreFormatTest.kt`.
+- Español: `res/values-es-rES/store_strings.xml` (fichero UTF-8 aparte, ver nota de encoding).
+
+### Formato del manifiesto
+
+JSON plano. Solo son obligatorios `id`, `title`, `system` y `url`. `system` es el `dbname` de
+`SystemID` (`snes`, `psx`, `gba`, `nes`, `md`, …). Poner SIEMPRE `fileName` con la extensión
+correcta, porque el escáner decide el sistema por la extensión.
+
+```json
+{
+  "version": 1,
+  "name": "Mi catálogo",
+  "games": [
+    {
+      "id": "snes-supermarioworld",
+      "title": "Super Mario World",
+      "system": "snes",
+      "url": "https://…/Super%20Mario%20World.sfc",
+      "fileName": "Super Mario World.sfc",
+      "sizeBytes": 524288,
+      "sha256": "…64 hex…",
+      "coverUrl": "https://…/cover.png",
+      "screenshots": ["https://…/shot1.png"],
+      "description": "Texto libre."
+    }
+  ]
+}
+```
+
+Claves desconocidas se ignoran, así el formato puede crecer sin romper clientes viejos.
+`validate()` marca avisos (id duplicado, sistema desconocido, sha256 mal formado…) y la pantalla
+los enseña. En Drive usar el enlace directo `https://drive.google.com/uc?export=download&id=…`;
+ese enlace **no** da un nombre de fichero usable, por eso `fileName` es imprescindible.
+
+### Cómo funciona la descarga
+
+`StoreLibrary` resuelve la carpeta destino igual que el proveedor local: la carpeta externa
+heredada (`pref_key_legacy_external_folder`) si el usuario configuró una, y si no la carpeta
+interna de roms. Bajo ella, `retrocat-store/<dbname-sistema>/<fileName>`. Al terminar:
+`LibraryIndexScheduler.scheduleLibrarySync(appContext)`, así el juego aparece solo.
+
+`StoreViewModel` vive en la Activity (no en la pantalla) para que una descarga siga viva al
+cambiar de pestaña. La descarga baja a `.part`, comprueba sha256 si el manifiesto lo trae, y solo
+entonces renombra: una descarga cortada nunca deja un fichero a medias que el escáner indexe.
+
+Entrada: pestaña **Tienda** en la barra inferior (ruta `MainRoute.STORE`). La primera vez pide la
+URL del manifiesto; luego se puede cambiar con "Cambiar la URL del manifiesto".
+
+### Dos trampas encontradas (no repetir)
+
+1. **`values-es-rES/strings.xml` está en Windows-1252**, no UTF-8. Editarlo con herramienta UTF-8
+   lo corrompe. Solución: las cadenas nuevas van en `values-es-rES/store_strings.xml` (UTF-8).
+   Android fusiona todos los XML de una carpeta `values-*`.
+2. **No hay ningún JDK en la máquina**, así que aquí no se puede compilar ni pasar ktlint ni
+   tests. Todo el código está revisado a mano contra la API real (se comprobó `SystemID` es enum,
+   `GameSystem.findById`, `SharedPreferencesHelper.getLegacySharedPreferences`,
+   `DirectoriesManager.getInternalRomsDirectory`, `LibraryIndexScheduler.scheduleLibrarySync`,
+   `MutableStateFlow.update` estable en coroutines 1.6.4, etc.). **Falta compilar en la máquina
+   del usuario.**
+
+### Pendiente (por orden sugerido)
+
+1. **Compilar y probar** en la máquina del usuario; reportar errores de compilación o qué se ve mal.
+2. Autorar un manifiesto real y publicarlo (Drive/GitHub) para probar el flujo entero.
+3. Descarga con `WorkManager` (sobrevive a que muera el proceso).
+4. Acción "jugar" tras instalar: buscar el `Game` por uri `file://` y llamar a `onGamePlay`.
+5. Los 6 ítems de UI acordados al principio (Big Picture en Inicio, filtro solo favoritos, etc.).
