@@ -8,10 +8,12 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Shop
 import androidx.compose.material.icons.filled.VideogameAsset
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Shop
 import androidx.compose.material.icons.outlined.VideogameAsset
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -61,6 +63,10 @@ enum class MainRoute(
     CATALOG(
         route = "catalog",
         titleId = R.string.catalog_title,
+    ),
+    STORE(
+        route = "store",
+        titleId = R.string.store_title,
     ),
     SYSTEM_GAMES(
         route = "systems/{metaSystemId}",
@@ -129,4 +135,5 @@ enum class MainNavigationRoutes(
     FAVORITES(MainRoute.FAVORITES, R.string.favorites, Icons.Filled.Favorite, Icons.Filled.FavoriteBorder),
     SYSTEMS(MainRoute.SYSTEMS, R.string.title_systems, Icons.Filled.VideogameAsset, Icons.Outlined.VideogameAsset),
     SEARCH(MainRoute.SEARCH, R.string.title_search, Icons.Filled.Search, Icons.Outlined.Search),
+    STORE(MainRoute.STORE, R.string.store_title, Icons.Filled.Shop, Icons.Outlined.Shop),
 }

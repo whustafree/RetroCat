@@ -258,4 +258,20 @@
     <string name="catalog_hide_menu">Hide menu</string>
     <string name="catalog_double_tap_hint">Double tap to play</string>
 
+    <string name="store_title">Store</string>
+    <string name="store_setup_title">Set up the store</string>
+    <string name="store_setup_explanation">Paste the link of the catalog manifest you published (Google Drive, GitHub or any static host). RetroCat reads it to list the games you can download into your library.</string>
+    <string name="store_manifest_url">Manifest URL</string>
+    <string name="store_save">Save</string>
+    <string name="store_cancel">Cancel</string>
+    <string name="store_refresh">Refresh catalog</string>
+    <string name="store_change_url">Change manifest URL</string>
+    <string name="store_empty">This catalog is empty</string>
+    <string name="store_download">Download</string>
+    <string name="store_downloading">Downloading…</string>
+    <string name="store_downloaded">Installed</string>
+    <string name="store_retry">Retry</string>
+    <string name="store_installed_hint">The game is now in your library.</string>
+    <string name="store_issues_title">Warnings in the catalog</string>
+
 </resources>

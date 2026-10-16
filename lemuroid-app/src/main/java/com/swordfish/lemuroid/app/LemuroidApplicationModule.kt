@@ -30,6 +30,10 @@ import com.swordfish.lemuroid.app.mobile.feature.input.GamePadShortcutBindingAct
 import com.swordfish.lemuroid.app.mobile.feature.main.MainActivity
 import com.swordfish.lemuroid.app.mobile.feature.settings.SettingsManager
 import com.swordfish.lemuroid.app.mobile.feature.shortcuts.ShortcutsGenerator
+import com.swordfish.lemuroid.app.mobile.feature.store.StoreDownloader
+import com.swordfish.lemuroid.app.mobile.feature.store.StoreLibrary
+import com.swordfish.lemuroid.app.mobile.feature.store.StorePreferences
+import com.swordfish.lemuroid.app.mobile.feature.store.StoreRepository
 import com.swordfish.lemuroid.app.shared.game.ExternalGameLauncherActivity
 import com.swordfish.lemuroid.app.shared.game.GameLauncher
 import com.swordfish.lemuroid.app.shared.input.InputDeviceManager
@@ -413,5 +417,28 @@ abstract class LemuroidApplicationModule {
             settingsManager: SettingsManager,
             inputDeviceManager: InputDeviceManager,
         ) = RumbleManager(context, settingsManager, inputDeviceManager)
+
+        @Provides
+        @PerApp
+        @JvmStatic
+        fun storeRepository(okHttpClient: OkHttpClient) = StoreRepository(okHttpClient)
+
+        @Provides
+        @PerApp
+        @JvmStatic
+        fun storeDownloader(okHttpClient: OkHttpClient) = StoreDownloader(okHttpClient)
+
+        @Provides
+        @PerApp
+        @JvmStatic
+        fun storePreferences(context: Context) = StorePreferences(context)
+
+        @Provides
+        @PerApp
+        @JvmStatic
+        fun storeLibrary(
+            context: Context,
+            directoriesManager: DirectoriesManager,
+        ) = StoreLibrary(context, directoriesManager)
     }
 }

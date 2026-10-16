@@ -75,6 +75,12 @@ import com.swordfish.lemuroid.app.mobile.feature.settings.inputdevices.InputDevi
 import com.swordfish.lemuroid.app.mobile.feature.settings.savesync.SaveSyncSettingsScreen
 import com.swordfish.lemuroid.app.mobile.feature.settings.savesync.SaveSyncSettingsViewModel
 import com.swordfish.lemuroid.app.mobile.feature.shortcuts.ShortcutsGenerator
+import com.swordfish.lemuroid.app.mobile.feature.store.StoreDownloader
+import com.swordfish.lemuroid.app.mobile.feature.store.StoreLibrary
+import com.swordfish.lemuroid.app.mobile.feature.store.StorePreferences
+import com.swordfish.lemuroid.app.mobile.feature.store.StoreRepository
+import com.swordfish.lemuroid.app.mobile.feature.store.StoreScreen
+import com.swordfish.lemuroid.app.mobile.feature.store.StoreViewModel
 import com.swordfish.lemuroid.app.mobile.feature.systems.MetaSystemsScreen
 import com.swordfish.lemuroid.app.mobile.feature.systems.MetaSystemsViewModel
 import com.swordfish.lemuroid.app.mobile.shared.compose.ui.AppTheme
@@ -134,6 +140,18 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
     @Inject
     lateinit var inputDeviceManager: InputDeviceManager
 
+    @Inject
+    lateinit var storeRepository: StoreRepository
+
+    @Inject
+    lateinit var storeDownloader: StoreDownloader
+
+    @Inject
+    lateinit var storePreferences: StorePreferences
+
+    @Inject
+    lateinit var storeLibrary: StoreLibrary
+
     private val reviewManager = ReviewManager()
 
     private val mainViewModel: MainViewModel by viewModels {
@@ -144,6 +162,17 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
     // same instance and therefore the same filters and observed game.
     private val catalogViewModel: CatalogViewModel by viewModels {
         CatalogViewModel.Factory(retrogradeDb, CatalogPreferences(applicationContext))
+    }
+
+    // Also hoisted: a download must survive the user leaving the store tab to browse the library.
+    private val storeViewModel: StoreViewModel by viewModels {
+        StoreViewModel.Factory(
+            applicationContext,
+            storeRepository,
+            storeDownloader,
+            storePreferences,
+            storeLibrary,
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -294,6 +323,12 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
                                 // The in-panel close control hides the landscape chrome again,
                                 // which is also what the auto-hide timer does after a few seconds.
                                 onOpenPanel = { chromeVisible = false },
+                            )
+                        }
+                        composable(MainRoute.STORE) {
+                            StoreScreen(
+                                modifier = Modifier.padding(padding),
+                                viewModel = storeViewModel,
                             )
                         }
                         composable(MainRoute.HOME) {
