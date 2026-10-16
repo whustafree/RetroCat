@@ -32,7 +32,10 @@ data class StoreDownload(
 
 data class StoreUiState(
     val loading: Boolean = false,
-    val manifestUrl: String = "",
+    /** Where the catalog comes from: a published manifest or a Drive folder. */
+    val source: StoreSource = StoreSource.MANIFEST,
+    /** The address in use for [source] (the manifest URL or the Drive folder link). */
+    val location: String = "",
     val configured: Boolean = false,
     val name: String = "",
     val groups: List<StoreGroup> = emptyList(),
@@ -76,7 +79,8 @@ class StoreViewModel(
     private val _state =
         MutableStateFlow(
             StoreUiState(
-                manifestUrl = preferences.manifestUrl,
+                source = preferences.source,
+                location = preferences.location,
                 configured = preferences.isConfigured,
             ),
         )
@@ -86,16 +90,36 @@ class StoreViewModel(
         if (preferences.isConfigured) refresh()
     }
 
-    /** Points the store at a manifest (or clears it when blank) and reloads it. */
-    fun saveManifestUrl(url: String) {
-        preferences.manifestUrl = url
-        _state.update { it.copy(manifestUrl = url.trim(), configured = preferences.isConfigured, error = null) }
+    /** Points the store at a published manifest (or clears it when blank) and reloads it. */
+    fun saveManifestUrl(url: String) = saveLocation(StoreSource.MANIFEST, url)
+
+    /** Points the store at a public Drive folder, whose contents become the catalog. */
+    fun saveDriveFolderUrl(url: String) = saveLocation(StoreSource.DRIVE_FOLDER, url)
+
+    /** Sets both the origin and its address, then reloads. Used by the setup screen. */
+    fun saveLocation(
+        source: StoreSource,
+        url: String,
+    ) {
+        preferences.source = source
+        when (source) {
+            StoreSource.MANIFEST -> preferences.manifestUrl = url
+            StoreSource.DRIVE_FOLDER -> preferences.driveFolderUrl = url
+        }
+        _state.update {
+            it.copy(
+                source = source,
+                location = url.trim(),
+                configured = preferences.isConfigured,
+                error = null,
+            )
+        }
         refresh()
     }
 
     fun refresh() {
-        val url = preferences.manifestUrl
-        if (url.isBlank()) {
+        val location = preferences.location
+        if (location.isBlank()) {
             _state.update {
                 it.copy(
                     loading = false,
@@ -110,7 +134,11 @@ class StoreViewModel(
         viewModelScope.launch {
             _state.update { it.copy(loading = true, error = null) }
             try {
-                val manifest = repository.fetchManifest(url)
+                val manifest =
+                    when (preferences.source) {
+                        StoreSource.MANIFEST -> repository.fetchManifest(location)
+                        StoreSource.DRIVE_FOLDER -> repository.loadDriveCatalog(location)
+                    }
                 _state.update {
                     it.copy(
                         loading = false,

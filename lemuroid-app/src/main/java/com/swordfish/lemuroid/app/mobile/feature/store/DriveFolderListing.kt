@@ -58,6 +58,20 @@ object DriveFolderListing {
     }
 
     /**
+     * The folder name, taken from the page title (`gba` for a folder called `gba`).
+     *
+     * Only used as a fallback: the URL is what identifies the folder.
+     */
+    fun parseFolderName(html: String): String? =
+        FOLDER_TITLE
+            .find(html)
+            ?.groupValues
+            ?.get(1)
+            ?.let(::decodeHtmlEntities)
+            ?.trim()
+            ?.ifEmpty { null }
+
+    /**
      * Extracts the folder id from any of the shapes a Drive folder link can take.
      *
      * Accepts `.../drive/folders/<id>`, the query form `...?id=<id>` and a bare id, so the user can
@@ -81,6 +95,7 @@ object DriveFolderListing {
 
     private val ENTRY_ID = Regex("id=\"entry-([^\"]+)\"")
     private val ENTRY_TITLE = Regex("<div class=\"flip-entry-title\">([^<]*)</div>")
+    private val FOLDER_TITLE = Regex("<title>([^<]*)</title>", RegexOption.IGNORE_CASE)
     private val FOLDER_ID_IN_PATH = Regex("/folders/([A-Za-z0-9_-]{10,})")
     private val FOLDER_ID_IN_QUERY = Regex("[?&]id=([A-Za-z0-9_-]{10,})")
 

@@ -260,8 +260,12 @@
 
     <string name="store_title">Store</string>
     <string name="store_setup_title">Set up the store</string>
-    <string name="store_setup_explanation">Paste the link of the catalog manifest you published (Google Drive, GitHub or any static host). RetroCat reads it to list the games you can download into your library.</string>
+    <string name="store_setup_explanation">Paste the link of your catalog: a JSON manifest you published, or a Google Drive folder you shared with the link. RetroCat reads it to list the games you can download into your library.</string>
     <string name="store_manifest_url">Manifest URL</string>
+    <string name="store_source_manifest">JSON manifest</string>
+    <string name="store_source_drive">Google Drive folder</string>
+    <string name="store_drive_folder_url">Drive folder link</string>
+    <string name="store_change_location">Change the catalog source</string>
     <string name="store_save">Save</string>
     <string name="store_cancel">Cancel</string>
     <string name="store_refresh">Refresh catalog</string>

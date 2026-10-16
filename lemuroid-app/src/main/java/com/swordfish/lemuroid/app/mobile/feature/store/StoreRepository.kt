@@ -15,12 +15,17 @@ class StoreException(
  * Reads the remote catalog over plain HTTP.
  *
  * The manifest is a single small JSON document, so a streaming converter is not needed: the body
- * is read whole and handed to [StoreManifestCodec]. Only the manifest is fetched here; the ROM
+ * is read whole and handed to [StoreManifestCodec]. Only the catalog is fetched here; the ROM
  * downloads keep their own progress aware path.
+ *
+ * A published manifest is not the only origin: [loadDriveCatalog] hands a public Drive folder to
+ * [DriveCatalogLoader], which builds the same [StoreManifest] from the folder's contents.
  */
 class StoreRepository(
     private val okHttpClient: OkHttpClient,
 ) {
+    private val driveCatalogLoader = DriveCatalogLoader(okHttpClient)
+
     suspend fun fetchManifest(url: String): StoreManifest =
         withContext(Dispatchers.IO) {
             val request =
@@ -38,4 +43,7 @@ class StoreRepository(
                 }
             }
         }
+
+    /** Builds the catalog from a public Drive folder instead of a published manifest. */
+    suspend fun loadDriveCatalog(folderUrl: String): StoreManifest = driveCatalogLoader.load(folderUrl)
 }

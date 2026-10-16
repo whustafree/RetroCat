@@ -36,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -88,7 +89,7 @@ fun StoreScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         if (!state.configured) {
-            StoreSetup(onSave = viewModel::saveManifestUrl)
+            StoreSetup(onSave = viewModel::saveLocation)
         } else {
             Column(modifier = Modifier.fillMaxSize()) {
                 StoreHeader(
@@ -116,12 +117,13 @@ fun StoreScreen(
         }
 
         if (editingUrl) {
-            StoreUrlDialog(
-                initialUrl = state.manifestUrl,
+            StoreLocationDialog(
+                initialSource = state.source,
+                initialUrl = state.location,
                 onDismiss = { editingUrl = false },
-                onConfirm = { url ->
+                onConfirm = { source, url ->
                     editingUrl = false
-                    viewModel.saveManifestUrl(url)
+                    viewModel.saveLocation(source, url)
                 },
             )
         }
@@ -129,7 +131,8 @@ fun StoreScreen(
 }
 
 @Composable
-private fun StoreSetup(onSave: (String) -> Unit) {
+private fun StoreSetup(onSave: (StoreSource, String) -> Unit) {
+    var source by rememberSaveable { mutableStateOf(StoreSource.MANIFEST) }
     var url by rememberSaveable { mutableStateOf("") }
 
     Column(
@@ -151,16 +154,18 @@ private fun StoreSetup(onSave: (String) -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
+        StoreSourceSelector(source = source, onSourceChange = { source = it })
+
         OutlinedTextField(
             value = url,
             onValueChange = { url = it },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.store_manifest_url)) },
+            label = { Text(stringResource(source.locationLabelRes)) },
             singleLine = true,
         )
 
         Button(
-            onClick = { onSave(url) },
+            onClick = { onSave(source, url) },
             enabled = url.isNotBlank(),
         ) {
             Text(stringResource(R.string.store_save))
@@ -168,28 +173,60 @@ private fun StoreSetup(onSave: (String) -> Unit) {
     }
 }
 
+/** The two origins the store can read, as a plain radio group. */
 @Composable
-private fun StoreUrlDialog(
+private fun StoreSourceSelector(
+    source: StoreSource,
+    onSourceChange: (StoreSource) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        StoreSource.values().forEach { option ->
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { onSourceChange(option) },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(selected = option == source, onClick = { onSourceChange(option) })
+
+                Text(
+                    text = stringResource(option.sourceLabelRes),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StoreLocationDialog(
+    initialSource: StoreSource,
     initialUrl: String,
     onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit,
+    onConfirm: (StoreSource, String) -> Unit,
 ) {
+    var source by rememberSaveable { mutableStateOf(initialSource) }
     var url by rememberSaveable { mutableStateOf(initialUrl) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.store_change_url)) },
+        title = { Text(stringResource(R.string.store_change_location)) },
         text = {
-            OutlinedTextField(
-                value = url,
-                onValueChange = { url = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.store_manifest_url)) },
-                singleLine = true,
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                StoreSourceSelector(source = source, onSourceChange = { source = it })
+
+                OutlinedTextField(
+                    value = url,
+                    onValueChange = { url = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(source.locationLabelRes)) },
+                    singleLine = true,
+                )
+            }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(url) }, enabled = url.isNotBlank()) {
+            TextButton(onClick = { onConfirm(source, url) }, enabled = url.isNotBlank()) {
                 Text(stringResource(R.string.store_save))
             }
         },
@@ -200,6 +237,22 @@ private fun StoreUrlDialog(
         },
     )
 }
+
+/** Field label for the active origin. */
+private val StoreSource.locationLabelRes: Int
+    get() =
+        when (this) {
+            StoreSource.MANIFEST -> R.string.store_manifest_url
+            StoreSource.DRIVE_FOLDER -> R.string.store_drive_folder_url
+        }
+
+/** Name shown in the origin selector. */
+private val StoreSource.sourceLabelRes: Int
+    get() =
+        when (this) {
+            StoreSource.MANIFEST -> R.string.store_source_manifest
+            StoreSource.DRIVE_FOLDER -> R.string.store_source_drive
+        }
 
 @Composable
 private fun StoreHeader(
@@ -233,7 +286,7 @@ private fun StoreHeader(
         }
 
         IconButton(onClick = onEditUrl) {
-            Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.store_change_url))
+            Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.store_change_location))
         }
     }
 }
