@@ -431,7 +431,10 @@ private fun CatalogCarousel(
     // The focused cover is the leftmost one that is fully inside the viewport. Anchoring the
     // selection to the start, rather than to whatever is nearest the middle, is what keeps the
     // first games of the catalog sitting at the beginning of the shelf at rest.
-    val focusedIndex by remember {
+    // Keyed on `games`: `remember {}` would capture the list from the first composition, so
+    // `games.lastIndex` would stay frozen at the first page and `coerceIn` would pin the focused
+    // cover to the last game of that page once the row scrolled into a later page.
+    val focusedIndex by remember(games) {
         derivedStateOf {
             val layout = listState.layoutInfo
 
@@ -513,7 +516,10 @@ private fun CatalogCarousel(
                     ContinuePlayingRow(
                         modifier = Modifier.align(Alignment.TopCenter),
                         games = continuePlaying,
-                        onGameClick = onGameLongClick,
+                        // A single tap opens the details dialog, exactly like the grid and like
+                        // the `onGameClick` name promises. Passing `onGameLongClick` here made a
+                        // tap open the long-press context menu instead.
+                        onGameClick = onGameClick,
                         onGameLongClick = onGameLongClick,
                     )
                 }
