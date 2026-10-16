@@ -6,6 +6,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.ResponseBody
 import okio.ByteString
 import java.io.File
 import java.io.FileOutputStream
@@ -18,6 +19,10 @@ import kotlin.coroutines.coroutineContext
  * The body is written to a `.part` sidecar and only renamed onto the final name once the download
  * finished and the checksum matched, so an interrupted or tampered download never leaves a
  * half-written file that the scanner would index as a game.
+ *
+ * Big files hosted on Drive are not served directly: Google answers with a small HTML page carrying
+ * the URL of the real download. That page is detected and followed instead of being written to disk
+ * as if it were the ROM.
  */
 class StoreDownloader(
     private val okHttpClient: OkHttpClient,
@@ -49,45 +54,102 @@ class StoreDownloader(
             }
         }
 
-    /** Streams the response into [partial] and returns the lowercase hex sha256 of what was read. */
+    /**
+     * Streams the response into [partial] and returns the lowercase hex sha256 of what was read.
+     *
+     * Follows Drive's "download anyway" interstitial up to a few times, then gives up.
+     */
     private suspend fun fetchToFile(
         url: String,
         partial: File,
         onProgress: (Progress) -> Unit,
     ): String {
-        val request = Request.Builder().url(url).build()
+        var currentUrl = url
 
-        okHttpClient.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw StoreException("The download returned HTTP ${response.code}")
-            }
+        for (hop in 0..MAX_INTERSTITIAL_HOPS) {
+            val request = Request.Builder().url(currentUrl).build()
 
-            val body = response.body ?: throw StoreException("The download returned an empty body")
-            val totalBytes = body.contentLength().takeIf { it > 0L }
-            val digest = MessageDigest.getInstance(SHA256)
-
-            body.byteStream().use { input ->
-                FileOutputStream(partial).use { output ->
-                    val buffer = ByteArray(BUFFER_SIZE)
-                    var read = input.read(buffer)
-                    var bytesRead = 0L
-
-                    while (read >= 0) {
-                        // Cancelling the coroutine must abort the download, not keep writing.
-                        coroutineContext[Job]?.ensureActive()
-                        output.write(buffer, 0, read)
-                        digest.update(buffer, 0, read)
-                        bytesRead += read
-                        onProgress(Progress(bytesRead, totalBytes))
-                        read = input.read(buffer)
+            val outcome =
+                okHttpClient.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        throw StoreException("The download returned HTTP ${response.code}")
                     }
 
-                    output.flush()
-                }
-            }
+                    val body = response.body ?: throw StoreException("The download returned an empty body")
+                    val interstitial =
+                        driveInterstitialUrl(
+                            url = currentUrl,
+                            contentType = response.header(HEADER_CONTENT_TYPE),
+                            body = body,
+                        )
 
-            return ByteString.of(*digest.digest()).hex()
+                    if (interstitial == null) {
+                        Outcome.Done(streamToFile(body, partial, onProgress))
+                    } else {
+                        Outcome.Retry(interstitial)
+                    }
+                }
+
+            when (outcome) {
+                is Outcome.Done -> return outcome.hash
+                is Outcome.Retry -> currentUrl = outcome.url
+            }
+            if (hop == MAX_INTERSTITIAL_HOPS) break
         }
+
+        throw StoreException("Google Drive did not hand over the file")
+    }
+
+    /** Writes the whole body to [partial] and returns its lowercase hex sha256. */
+    private suspend fun streamToFile(
+        body: ResponseBody,
+        partial: File,
+        onProgress: (Progress) -> Unit,
+    ): String {
+        val totalBytes = body.contentLength().takeIf { it > 0L }
+        val digest = MessageDigest.getInstance(SHA256)
+
+        body.byteStream().use { input ->
+            FileOutputStream(partial).use { output ->
+                val buffer = ByteArray(BUFFER_SIZE)
+                var read = input.read(buffer)
+                var bytesRead = 0L
+
+                while (read >= 0) {
+                    // Cancelling the coroutine must abort the download, not keep writing.
+                    coroutineContext[Job]?.ensureActive()
+                    output.write(buffer, 0, read)
+                    digest.update(buffer, 0, read)
+                    bytesRead += read
+                    onProgress(Progress(bytesRead, totalBytes))
+                    read = input.read(buffer)
+                }
+
+                output.flush()
+            }
+        }
+
+        return ByteString.of(*digest.digest()).hex()
+    }
+
+    /**
+     * The URL of the real file when [body] is Drive's virus-scan interstitial page, or `null` when
+     * it is the file itself. Reading the body is only safe in the first case, which is why the
+     * content type is checked first.
+     */
+    private fun driveInterstitialUrl(
+        url: String,
+        contentType: String?,
+        body: ResponseBody,
+    ): String? {
+        if (!DriveDownloadPage.isWarning(url, contentType)) return null
+        return DriveDownloadPage.realUrl(body.string())
+    }
+
+    private sealed interface Outcome {
+        data class Done(val hash: String) : Outcome
+
+        data class Retry(val url: String) : Outcome
     }
 
     private fun verifyChecksum(
@@ -115,5 +177,10 @@ class StoreDownloader(
         private const val PARTIAL_SUFFIX = ".part"
         private const val SHA256 = "SHA-256"
         private const val BUFFER_SIZE = 64 * 1024
+
+        private const val HEADER_CONTENT_TYPE = "Content-Type"
+
+        /** How many interstitials to follow before deciding Drive will not hand over the file. */
+        private const val MAX_INTERSTITIAL_HOPS = 3
     }
 }
