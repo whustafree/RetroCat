@@ -277,5 +277,11 @@
     <string name="store_retry">Retry</string>
     <string name="store_installed_hint">The game is now in your library.</string>
     <string name="store_issues_title">Warnings in the catalog</string>
+    <string name="store_show_list">Show as list</string>
+    <string name="store_show_shelves">Show as shelves</string>
+    <plurals name="store_system_games">
+        <item quantity="one">%1$d game</item>
+        <item quantity="other">%1$d games</item>
+    </plurals>
 
 </resources>

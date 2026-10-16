@@ -436,3 +436,26 @@ la URL real, que el descargador sigue.
 - Google Sign-In (OAuth, `drive.readonly`) si algún día hace falta acceso a carpetas **privadas**;
   recordar que usuario+contraseña no es posible.
 - Descarga con `WorkManager`.
+
+---
+
+## 16-10-2026 (2) — Vista en lista para la tienda
+
+La tienda se veía como una estantería horizontal por sistema. Con 1036 juegos eso obliga a deslizar
+muchísimo y no deja ver "cuántos hay". Se añade un selector de vista:
+
+- **Lista (por defecto)**: `LazyColumn` con una fila por juego (carátula pequeña 56x74, título y
+  estado de la descarga) y una cabecera por sistema con su nombre y el **número de juegos**
+  (`pluralStringResource` con `R.plurals.store_system_games`).
+- **Estanterías**: el carrusel horizontal de antes.
+
+El botón está en la cabecera de la tienda (icono de rejilla ⇄ lista). La elección se guarda en
+`StorePreferences.viewMode` (clave `store_view_mode`), así que sobrevive a cerrar la app.
+
+Ficheros tocados: `StorePreferences.kt` (enum `StoreViewMode` + propiedad), `StoreViewModel.kt`
+(`viewMode` en el estado y `toggleViewMode()`), `StoreScreen.kt` (`StoreGameList`,
+`StoreSystemHeader`, `StoreGameRow`), y las cadenas nuevas en `values/strings.xml` y
+`values-es-rES/store_strings.xml`.
+
+Build + tests: `BUILD SUCCESSFUL` y 47 tests, 0 fallos (31 de la tienda).
+

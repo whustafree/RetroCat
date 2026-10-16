@@ -12,6 +12,18 @@ enum class StoreSource {
     DRIVE_FOLDER,
 }
 
+/** How the catalog is laid out once it is loaded. */
+enum class StoreViewMode {
+    /**
+     * One row per game under a header per system. Browsing a catalog of thousands of entries relies
+     * on seeing many at a time, which a horizontal shelf cannot do.
+     */
+    LIST,
+
+    /** The classic horizontal shelf per system, which shows fewer games but bigger covers. */
+    SHELVES,
+}
+
 /**
  * Where the remote catalog lives.
  *
@@ -44,6 +56,15 @@ class StorePreferences(context: Context) {
             preferences.edit().putString(KEY_DRIVE_FOLDER_URL, value.trim()).apply()
         }
 
+    /** The layout the catalog is shown in. Defaults to the list, which reads better when large. */
+    var viewMode: StoreViewMode
+        get() =
+            StoreViewMode.values().firstOrNull { it.name == preferences.getString(KEY_VIEW_MODE, null) }
+                ?: StoreViewMode.LIST
+        set(value) {
+            preferences.edit().putString(KEY_VIEW_MODE, value.name).apply()
+        }
+
     /** The address of the active [source], empty when that origin was never configured. */
     val location: String
         get() =
@@ -57,6 +78,7 @@ class StorePreferences(context: Context) {
 
     companion object {
         private const val KEY_SOURCE = "store_source"
+        private const val KEY_VIEW_MODE = "store_view_mode"
         private const val KEY_MANIFEST_URL = "store_manifest_url"
         private const val KEY_DRIVE_FOLDER_URL = "store_drive_folder_url"
     }

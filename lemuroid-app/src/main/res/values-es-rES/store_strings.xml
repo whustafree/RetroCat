@@ -25,4 +25,10 @@
     <string name="store_retry">Reintentar</string>
     <string name="store_installed_hint">El juego ya está en tu biblioteca.</string>
     <string name="store_issues_title">Avisos del catálogo</string>
+    <string name="store_show_list">Ver en lista</string>
+    <string name="store_show_shelves">Ver en estanterías</string>
+    <plurals name="store_system_games">
+        <item quantity="one">%1$d juego</item>
+        <item quantity="other">%1$d juegos</item>
+    </plurals>
 </resources>

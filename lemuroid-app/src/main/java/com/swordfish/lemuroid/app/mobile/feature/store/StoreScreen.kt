@@ -27,7 +27,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -55,6 +57,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -65,8 +68,13 @@ import coil.compose.AsyncImage
 import com.swordfish.lemuroid.R
 import com.swordfish.lemuroid.lib.library.GameSystem
 import com.swordfish.lemuroid.lib.library.MetaSystemID
+import com.swordfish.lemuroid.lib.library.SystemID
 
 private val TILE_WIDTH = 120.dp
+
+/** Cover of a list row, at the 3:4 ratio most packs use. */
+private val ROW_COVER_WIDTH = 56.dp
+private val ROW_COVER_HEIGHT = 74.dp
 
 /** How many manifest warnings to spell out before the list stops being useful. */
 private const val MAX_SHOWN_ISSUES = 5
@@ -95,6 +103,8 @@ fun StoreScreen(
                 StoreHeader(
                     name = state.name,
                     loading = state.loading,
+                    viewMode = state.viewMode,
+                    onToggleViewMode = viewModel::toggleViewMode,
                     onRefresh = viewModel::refresh,
                     onEditUrl = { editingUrl = true },
                 )
@@ -258,6 +268,8 @@ private val StoreSource.sourceLabelRes: Int
 private fun StoreHeader(
     name: String,
     loading: Boolean,
+    viewMode: StoreViewMode,
+    onToggleViewMode: () -> Unit,
     onRefresh: () -> Unit,
     onEditUrl: () -> Unit,
 ) {
@@ -279,6 +291,22 @@ private fun StoreHeader(
 
         if (loading) {
             CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+        }
+
+        IconButton(onClick = onToggleViewMode) {
+            when (viewMode) {
+                StoreViewMode.LIST ->
+                    Icon(
+                        imageVector = Icons.Filled.GridView,
+                        contentDescription = stringResource(R.string.store_show_shelves),
+                    )
+
+                StoreViewMode.SHELVES ->
+                    Icon(
+                        imageVector = Icons.Filled.ViewList,
+                        contentDescription = stringResource(R.string.store_show_list),
+                    )
+            }
         }
 
         IconButton(onClick = onRefresh) {
@@ -305,7 +333,11 @@ private fun StoreBody(
 
         state.isEmpty -> StoreCenteredMessage { Text(stringResource(R.string.store_empty)) }
 
-        else -> StoreShelves(state = state, onGameClick = onGameClick)
+        else ->
+            when (state.viewMode) {
+                StoreViewMode.LIST -> StoreGameList(state = state, onGameClick = onGameClick)
+                StoreViewMode.SHELVES -> StoreShelves(state = state, onGameClick = onGameClick)
+            }
     }
 }
 
@@ -348,6 +380,171 @@ private fun StoreShelves(
         }
     }
 }
+
+/**
+ * The catalog as a plain vertical list: one row per game and a header per system.
+ *
+ * A shelf only shows a handful of covers, which looks nice but hides how big the catalog is. A
+ * list can be scrolled by the hundreds and each header spells out how many games it holds, which
+ * is what makes a thousand-entry pack readable.
+ */
+@Composable
+private fun StoreGameList(
+    state: StoreUiState,
+    onGameClick: (StoreGame) -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp),
+    ) {
+        if (state.issues.isNotEmpty()) {
+            item(key = "issues") {
+                StoreIssues(issues = state.issues)
+            }
+        }
+
+        state.groups.forEach { group ->
+            item(key = "system-${group.system.name}") {
+                StoreSystemHeader(system = group.system, count = group.games.size)
+            }
+
+            items(items = group.games, key = { it.id }) { game ->
+                StoreGameRow(
+                    game = game,
+                    download = state.downloads[game.id],
+                    downloaded = game.id in state.downloadedIds,
+                    onClick = { onGameClick(game) },
+                )
+            }
+        }
+    }
+}
+
+/** Name of the system and how many games it holds, so the size of the catalog is visible. */
+@Composable
+private fun StoreSystemHeader(
+    system: SystemID,
+    count: Int,
+) {
+    val context = LocalContext.current
+    val title =
+        remember(system) {
+            runCatching { context.getString(GameSystem.findById(system.dbname).shortTitleResId) }
+                .getOrDefault(system.dbname)
+        }
+
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp),
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+        )
+
+        Text(
+            text = pluralStringResource(R.plurals.store_system_games, count, count),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/** One row of the list: a small cover, the title and the state of its download. */
+@Composable
+private fun StoreGameRow(
+    game: StoreGame,
+    download: StoreDownload?,
+    downloaded: Boolean,
+    onClick: () -> Unit,
+) {
+    val status = download?.status
+
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .width(ROW_COVER_WIDTH)
+                    .height(ROW_COVER_HEIGHT)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+        ) {
+            StoreCoverImage(
+                modifier = Modifier.fillMaxSize(),
+                url = game.coverUrl,
+                title = game.title,
+            )
+        }
+
+        Column(
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .padding(start = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = game.title,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            gameRowMeta(game)?.let { meta ->
+                Text(
+                    text = meta,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
+            when {
+                status == StoreDownloadStatus.DOWNLOADING && download != null -> {
+                    StoreProgressBar(
+                        modifier = Modifier.padding(top = 4.dp),
+                        fraction = download.fraction,
+                    )
+
+                    Text(
+                        text = downloadLabel(download),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                status == StoreDownloadStatus.FAILED ->
+                    Text(
+                        text = download?.error.orEmpty().ifBlank { stringResource(R.string.store_retry) },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+            }
+        }
+
+        if (downloaded || download != null) {
+            StoreBadge(
+                modifier = Modifier.padding(start = 8.dp),
+                download = download,
+                downloaded = downloaded,
+            )
+        }
+    }
+}
+
+/** Size of a game, when the catalog announced one, as the row's second line. */
+private fun gameRowMeta(game: StoreGame): String? =
+    game.sizeBytes?.takeIf { it > 0L }?.let { formatBytes(it) }
 
 @Composable
 private fun StoreIssues(issues: List<String>) {

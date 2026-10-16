@@ -34,6 +34,8 @@ data class StoreUiState(
     val loading: Boolean = false,
     /** Where the catalog comes from: a published manifest or a Drive folder. */
     val source: StoreSource = StoreSource.MANIFEST,
+    /** How the catalog is laid out: a vertical list or a shelf per system. */
+    val viewMode: StoreViewMode = StoreViewMode.LIST,
     /** The address in use for [source] (the manifest URL or the Drive folder link). */
     val location: String = "",
     val configured: Boolean = false,
@@ -80,6 +82,7 @@ class StoreViewModel(
         MutableStateFlow(
             StoreUiState(
                 source = preferences.source,
+                viewMode = preferences.viewMode,
                 location = preferences.location,
                 configured = preferences.isConfigured,
             ),
@@ -115,6 +118,17 @@ class StoreViewModel(
             )
         }
         refresh()
+    }
+
+    /** Flips the catalog between the vertical list and the shelves, remembering the choice. */
+    fun toggleViewMode() {
+        val next =
+            when (_state.value.viewMode) {
+                StoreViewMode.LIST -> StoreViewMode.SHELVES
+                StoreViewMode.SHELVES -> StoreViewMode.LIST
+            }
+        preferences.viewMode = next
+        _state.update { it.copy(viewMode = next) }
     }
 
     fun refresh() {
