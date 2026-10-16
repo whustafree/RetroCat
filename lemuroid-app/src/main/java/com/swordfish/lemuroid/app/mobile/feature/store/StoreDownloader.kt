@@ -1,6 +1,7 @@
 package com.swordfish.lemuroid.app.mobile.feature.store
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -73,7 +74,7 @@ class StoreDownloader(
 
                     while (read >= 0) {
                         // Cancelling the coroutine must abort the download, not keep writing.
-                        coroutineContext.ensureActive()
+                        coroutineContext[Job]?.ensureActive()
                         output.write(buffer, 0, read)
                         digest.update(buffer, 0, read)
                         bytesRead += read
