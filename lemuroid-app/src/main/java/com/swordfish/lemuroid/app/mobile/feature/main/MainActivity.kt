@@ -83,6 +83,8 @@ import com.swordfish.lemuroid.app.mobile.feature.store.StoreScreen
 import com.swordfish.lemuroid.app.mobile.feature.store.StoreViewModel
 import com.swordfish.lemuroid.app.mobile.feature.systems.MetaSystemsScreen
 import com.swordfish.lemuroid.app.mobile.feature.systems.MetaSystemsViewModel
+import com.swordfish.lemuroid.app.mobile.feature.update.UpdateInstaller
+import com.swordfish.lemuroid.app.mobile.feature.update.UpdateRepository
 import com.swordfish.lemuroid.app.mobile.shared.compose.ui.AppTheme
 import com.swordfish.lemuroid.app.shared.GameInteractor
 import com.swordfish.lemuroid.app.shared.game.BaseGameActivity
@@ -151,6 +153,12 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
 
     @Inject
     lateinit var storeCatalogCache: StoreCatalogCache
+
+    @Inject
+    lateinit var updateRepository: UpdateRepository
+
+    @Inject
+    lateinit var updateInstaller: UpdateInstaller
 
     private val reviewManager = ReviewManager()
 
@@ -423,6 +431,8 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
                                                         applicationContext,
                                                     ),
                                                 ),
+                                                updateRepository,
+                                                updateInstaller,
                                             ),
                                     ),
                                 navController = navController,

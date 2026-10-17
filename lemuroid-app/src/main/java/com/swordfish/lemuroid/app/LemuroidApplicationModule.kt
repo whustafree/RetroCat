@@ -35,6 +35,8 @@ import com.swordfish.lemuroid.app.mobile.feature.store.StoreDownloader
 import com.swordfish.lemuroid.app.mobile.feature.store.StoreLibrary
 import com.swordfish.lemuroid.app.mobile.feature.store.StorePreferences
 import com.swordfish.lemuroid.app.mobile.feature.store.StoreRepository
+import com.swordfish.lemuroid.app.mobile.feature.update.UpdateInstaller
+import com.swordfish.lemuroid.app.mobile.feature.update.UpdateRepository
 import com.swordfish.lemuroid.app.shared.game.ExternalGameLauncherActivity
 import com.swordfish.lemuroid.app.shared.game.GameLauncher
 import com.swordfish.lemuroid.app.shared.input.InputDeviceManager
@@ -446,5 +448,18 @@ abstract class LemuroidApplicationModule {
             context: Context,
             directoriesManager: DirectoriesManager,
         ) = StoreLibrary(context, directoriesManager)
+
+        @Provides
+        @PerApp
+        @JvmStatic
+        fun updateRepository(okHttpClient: OkHttpClient) = UpdateRepository(okHttpClient)
+
+        @Provides
+        @PerApp
+        @JvmStatic
+        fun updateInstaller(
+            context: Context,
+            okHttpClient: OkHttpClient,
+        ) = UpdateInstaller(context, okHttpClient)
     }
 }

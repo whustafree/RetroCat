@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Textos de la auto-actualización. Este fichero se guarda en UTF-8 (a diferencia del strings.xml
+  histórico, que está en Windows-1252), así que los acentos son seguros aquí.
+-->
+<resources>
+    <string name="settings_title_check_updates">Buscar actualizaciones</string>
+    <string name="update_current_version">Versión instalada: %1$s</string>
+    <string name="update_checking">Buscando la última versión…</string>
+    <string name="update_up_to_date">Estás en la última versión (%1$s)</string>
+    <string name="update_available_subtitle">Disponible la versión %1$s</string>
+    <string name="update_downloading">Descargando la actualización…</string>
+    <string name="update_available_title">Actualización disponible</string>
+    <string name="update_available_message">Ya está publicada la versión RetroCat %1$s. El APK se descarga desde GitHub y el instalador del sistema termina el trabajo.</string>
+    <string name="update_install">Descargar e instalar</string>
+    <string name="update_not_now">Ahora no</string>
+    <string name="update_check_failed">No se pudo comprobar la actualización</string>
+    <string name="update_download_failed">No se pudo descargar la actualización</string>
+</resources>

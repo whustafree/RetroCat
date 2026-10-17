@@ -541,8 +541,43 @@ Build + tests: `BUILD SUCCESSFUL` y **63 tests, 0 fallos**.
 
 - Los 6 ítems de UI acordados al principio (siguen aplazados).
 - Google Sign-In (OAuth, `drive.readonly`) si algún día hace falta acceso a carpetas **privadas**.
-- Caché de carátulas, auto-actualización, icono propio, español completo, CI con tests y ktlint,
-  changelog automático.
+- Caché de carátulas, icono propio, español completo, CI con tests y ktlint, changelog automático.
+
+---
+
+## 17-10-2026 (4) — Auto-actualización desde GitHub
+
+Cada versión nueva obligaba a buscar el APK a mano en GitHub. Ahora los ajustes tienen **"Buscar
+actualizaciones"**, con la versión instalada debajo:
+
+- `UpdateRepository` lee la lista de releases de GitHub (`GET /repos/whustafree/RetroCat/releases`) y
+  se queda con la etiqueta más nueva que **sea una versión y traiga un APK**. Se lee la lista y no
+  `releases/latest` a propósito: el flujo también mantiene la release móvil `apk-latest`, cuyo tag no
+  es una versión, así que se ignora sola.
+- `UpdateVersions` compara `v1.19.4` con `1.19.3-retrocat` partiendo el texto en números y rellenando
+  con ceros lo que falte. Un tag que no es una versión nunca es "más nuevo": mejor decir que estás al
+  día que ofrecer una instalación sin sentido. Cubierto por 13 casos de test.
+- Al abrir los ajustes se comprueba **solo**, pero en silencio: la línea informa ("Disponible la
+  versión 1.19.4") sin abrir nada. El diálogo —con **Descargar e instalar**— sale solo si el usuario
+  toca la entrada.
+- La descarga va a `cacheDir/update/` (limpiando APKs viejos) y se le entrega al **instalador del
+  sistema** por `FileProvider`, que es lo único que puede reemplazar la app. El sistema pedirá
+  permiso para instalar apps desconocidas, como con cualquier APK descargado.
+- Un fallo al comprobar y un fallo al descargar se distinguen ("No se pudo comprobar la
+  actualización" / "No se pudo descargar la actualización") en vez de decir que todo está al día.
+
+Ficheros nuevos: `update/UpdateVersions.kt`, `update/UpdateRepository.kt`, `update/UpdateInstaller.kt`,
+`res/xml/file_paths.xml` y `values-es-rES/update_strings.xml`. Se añade el permiso
+`REQUEST_INSTALL_PACKAGES` y el `FileProvider`. `SettingsViewModel` gana el estado de actualización.
+
+Build + tests: `BUILD SUCCESSFUL` y **76 tests, 0 fallos**.
+
+### Pendiente
+
+- Los 6 ítems de UI acordados al principio (siguen aplazados).
+- Google Sign-In (OAuth, `drive.readonly`) si algún día hace falta acceso a carpetas **privadas**.
+- Caché de carátulas, icono propio, español completo, CI con tests y ktlint, changelog automático.
+
 
 
 

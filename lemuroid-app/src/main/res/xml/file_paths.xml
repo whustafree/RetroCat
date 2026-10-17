@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Only the folder the updater downloads into is shared, and only for the short moment between
+  downloading an APK and handing it to the system installer.
+-->
+<paths>
+    <cache-path
+        name="update"
+        path="update/" />
+</paths>
