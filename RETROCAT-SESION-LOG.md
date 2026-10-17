@@ -720,6 +720,44 @@ La tienda sirve un catálogo de más de mil juegos y se usa a base de tandas: un
   favorito, no lo ordena), pero al leerse junto a «A-Z» y «Jugados recientemente» parecía un orden.
   Ahora dice lo que hace.
 
+---
+
+## 17-10-2026 — En reposo
+
+RetroCat se queda parado unos días. Estado al dejarlo:
+
+- **v1.19.8 publicada y marcada como la última** (`CI` 5m 49s y `Publish` 13m 47s, verdes). Tres
+  commits: `a0c03f0` (el modo TV), `a0f7406` (la tienda por tandas, con el salto a 1.19.8) y
+  `3ee2e1c` (este registro).
+- Verificado antes de subir: **111 tests, 0 fallos**, `ktlintCheck` y `assembleFreeDynamic` correctos.
+
+### Dónde se retoma
+
+- **El mando en Big Picture (horizontal).** El carrusel ya se navega con la cruceta, pero **A/Enter no
+  hace nada**: hay que tocar la portada con el dedo para abrir el juego. El punto exacto es
+  `CatalogScreen.kt`, el manejador `onCarouselKeyEvent`, que sólo mira las cuatro direcciones y
+  devuelve `false` para el resto. Lo que falta es que abra el juego enfocado, igual que hace el
+  toque (`onGamePlay`).
+- **La tienda dentro del modo TV.** No hay ninguna entrada a la tienda en `app/tv/`: el inicio de
+  Leanback sólo ofrece `TVSettingType` (re-escanear, favoritos, carpeta, ajustes, guardado
+  sincronizado). Va al final porque aquí no se puede probar (sin TV ni emulador).
+- **Pendiente menor:** la etiqueta honesta de «Reanudar» en el catálogo. Necesita
+  `StatesManager.getAutoSaveInfo(game, coreID)` y el núcleo **seleccionado** (`CoresSelection`)
+  dentro de `CatalogViewModel`; se dejó por el coste, no por falta de ganas.
+- `heroPanelWidth` (`GridDensity.kt`) sólo lo usan los tests, no la interfaz.
+
+**Cómo retomar.** El clon vive en
+`C:\Users\whustaf\AppData\Local\Temp\opencode\RetroCat-review`, que es una carpeta temporal; todo lo
+de arriba está en GitHub (`main`, etiqueta `v1.19.8`), así que si esa carpeta desaparece basta con
+volver a clonar. Para compilar, con Java 17:
+
+    $env:JAVA_HOME='C:\Users\whustaf\AppData\Local\Temp\opencode\jdk17\jdk-17.0.20.1+1'
+    .\gradlew.bat ktlintCheck :lemuroid-app:testFreeDynamicDebugUnitTest :lemuroid-app:assembleFreeDynamic
+
+Para la siguiente versión: subir `versionCode` (ahora 261) y `versionName` (ahora `1.19.8-retrocat`)
+en `lemuroid-app/build.gradle.kts`, commit, `git push origin main`, `git tag vX`, `git push origin
+vX`; el flujo de publicación hace el resto.
+
 
 
 
