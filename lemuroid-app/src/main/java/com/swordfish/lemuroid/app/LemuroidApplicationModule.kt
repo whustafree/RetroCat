@@ -30,6 +30,7 @@ import com.swordfish.lemuroid.app.mobile.feature.input.GamePadShortcutBindingAct
 import com.swordfish.lemuroid.app.mobile.feature.main.MainActivity
 import com.swordfish.lemuroid.app.mobile.feature.settings.SettingsManager
 import com.swordfish.lemuroid.app.mobile.feature.shortcuts.ShortcutsGenerator
+import com.swordfish.lemuroid.app.mobile.feature.store.StoreCatalogCache
 import com.swordfish.lemuroid.app.mobile.feature.store.StoreDownloader
 import com.swordfish.lemuroid.app.mobile.feature.store.StoreLibrary
 import com.swordfish.lemuroid.app.mobile.feature.store.StorePreferences
@@ -432,6 +433,11 @@ abstract class LemuroidApplicationModule {
         @PerApp
         @JvmStatic
         fun storePreferences(context: Context) = StorePreferences(context)
+
+        @Provides
+        @PerApp
+        @JvmStatic
+        fun storeCatalogCache(context: Context) = StoreCatalogCache(context)
 
         @Provides
         @PerApp

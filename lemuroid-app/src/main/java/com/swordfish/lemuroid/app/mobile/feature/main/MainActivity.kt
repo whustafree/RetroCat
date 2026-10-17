@@ -75,6 +75,7 @@ import com.swordfish.lemuroid.app.mobile.feature.settings.inputdevices.InputDevi
 import com.swordfish.lemuroid.app.mobile.feature.settings.savesync.SaveSyncSettingsScreen
 import com.swordfish.lemuroid.app.mobile.feature.settings.savesync.SaveSyncSettingsViewModel
 import com.swordfish.lemuroid.app.mobile.feature.shortcuts.ShortcutsGenerator
+import com.swordfish.lemuroid.app.mobile.feature.store.StoreCatalogCache
 import com.swordfish.lemuroid.app.mobile.feature.store.StoreDownloader
 import com.swordfish.lemuroid.app.mobile.feature.store.StoreLibrary
 import com.swordfish.lemuroid.app.mobile.feature.store.StorePreferences
@@ -152,6 +153,9 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
     @Inject
     lateinit var storeLibrary: StoreLibrary
 
+    @Inject
+    lateinit var storeCatalogCache: StoreCatalogCache
+
     private val reviewManager = ReviewManager()
 
     private val mainViewModel: MainViewModel by viewModels {
@@ -172,6 +176,7 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
             storeDownloader,
             storePreferences,
             storeLibrary,
+            storeCatalogCache,
         )
     }
 

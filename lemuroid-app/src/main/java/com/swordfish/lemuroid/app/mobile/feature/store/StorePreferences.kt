@@ -65,6 +65,18 @@ class StorePreferences(context: Context) {
             preferences.edit().putString(KEY_VIEW_MODE, value.name).apply()
         }
 
+    /**
+     * Ids of every game the last successful scan returned.
+     *
+     * The difference between this and the next scan is what the store marks as "new", which is how
+     * adding a few ROMs to the Drive folder and pressing refresh becomes visible.
+     */
+    var knownIds: Set<String>
+        get() = preferences.getStringSet(KEY_KNOWN_IDS, null).orEmpty().toSet()
+        set(value) {
+            preferences.edit().putStringSet(KEY_KNOWN_IDS, value).apply()
+        }
+
     /** The address of the active [source], empty when that origin was never configured. */
     val location: String
         get() =
@@ -79,6 +91,7 @@ class StorePreferences(context: Context) {
     companion object {
         private const val KEY_SOURCE = "store_source"
         private const val KEY_VIEW_MODE = "store_view_mode"
+        private const val KEY_KNOWN_IDS = "store_known_ids"
         private const val KEY_MANIFEST_URL = "store_manifest_url"
         private const val KEY_DRIVE_FOLDER_URL = "store_drive_folder_url"
     }
