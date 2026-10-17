@@ -670,7 +670,55 @@ de los reintentos). `ktlintCheck` y `assembleFreeDynamic`: `BUILD SUCCESSFUL`.
   marca de RetroCat cuando se toque el modo TV.
 - Los 6 ítems de UI acordados al principio (siguen aplazados).
 - Google Sign-In (OAuth, `drive.readonly`) si algún día hace falta acceso a carpetas **privadas**.
-- Modo **Big Picture / Android TV** y mandos.
+- Modo **Big Picture / Android TV**: mandos, y la tienda dentro del modo TV.
+
+---
+
+## 17-10-2026 (9) — La cara del modo TV
+
+El modo TV seguía siendo Lemuroid por fuera: el cartel que Android TV enseña en el lanzador
+(`ic_banner`) era el heredado, y las actividades de TV arrancaban con un hueco negro, justo lo que el
+teléfono ya no hace desde su pantalla de arranque.
+
+- **Cartel nuevo**, generado, no dibujado a mano: la marca a la izquierda y «Retro» en turquesa
+  (`#4DE1C1`) y «Cat» en blanco roto (`#F3F4F8`) sobre el fondo de la casa (`#0A0B18`). 320×180 px,
+  que es lo que pide Google TV. El generador mide la marca, pone el texto al tamaño más grande que
+  quepa y luego vuelve a leer la imagen para comprobar que nada toca el borde.
+- **Pantalla de arranque en la TV**, con el mismo tema `Splash` que el teléfono, y el fondo del modo
+  TV alineado con ese mismo oscuro (`md_theme_dark_background`) en lugar del `#121212` heredado.
+- La marca sale del icono adaptativo (su zona segura), así que no se inventa un logotipo nuevo: se
+  reutiliza el que ya estaba.
+- **Sin verificar**: en esta máquina no hay forma de probar Android TV (sin hipervisor) ni consta un
+  aparato de TV. El cartel se puede mirar en
+  `C:\Users\whustaf\AppData\Local\Temp\opencode\RetroCat-banner-preview.png` (3 aumentos).
+
+---
+
+## 17-10-2026 (10) — La tienda, en tandas
+
+La tienda sirve un catálogo de más de mil juegos y se usa a base de tandas: un sistema entero, o
+«todo lo que no tengo». Lo que faltaba era justo la parte de las tandas.
+
+- **Panel de descargas**, encima de la lista: «N en cola · M descargando · K fallidas», con
+  **Reintentar las fallidas** y **Cancelar todo**. Son las dos cosas que no se pueden hacer a mano
+  sobre mil filas: reintentar cien descargas caídas eran cien toques, y parar un «seleccionar todo»
+  por error, mil.
+- **«Seleccionar todo» selecciona lo que se ve.** Antes marcaba el catálogo entero aunque
+  estuvieras mirando un sistema o el chip «Sin descargar». Es el fallo de verdad de esta tanda: la
+  lista y la selección pasan ahora por la misma función (`visibleGroups`), así que no pueden
+  discrepar.
+- **Buscar por sistema**: escribir `gba` o `snes` deja el sistema entero, y se combina con el título
+  (`mario gba`). El nombre lo construye el mismo ayudante en la lista y en «seleccionar todo», para
+  que las dos coincidan en lo que encontró `gba`.
+- **Solo por Wi-Fi**: una opción recordada que retiene las descargas hasta una red no medida (mil
+  ROMs pueden vaciar una tarifa de datos de una sentada). Viene desactivada, que es lo que la tienda
+  hacía hasta ahora; se enciende en un chip, antes de descargar y no después de fallar.
+- **Aviso de espacio**: al descargar, si lo pedido no cabe, se dice cuánto ocupa y cuánto queda antes
+  de empezar. Solo se enseña cuando el catálogo trae tamaños y el sistema dice el hueco libre: sin
+  datos no hay aviso, en vez de avisar de un número inventado.
+- **«Solo favoritos»**: el chip «Favoritos» del catálogo ya filtraba de verdad (esconde lo que no es
+  favorito, no lo ordena), pero al leerse junto a «A-Z» y «Jugados recientemente» parecía un orden.
+  Ahora dice lo que hace.
 
 
 
