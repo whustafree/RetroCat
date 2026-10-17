@@ -24,6 +24,26 @@ enum class StoreSortOrder {
 }
 
 /**
+ * The catalog as the screen shows it: the search box, the status chip and the sort order applied.
+ *
+ * Both the list and "select all" go through here, so what gets ticked is what is on screen: with a
+ * system filtered, selecting everything must not queue the whole store.
+ */
+fun StoreUiState.visibleGroups(systemName: (SystemID) -> String = { it.dbname }): List<StoreGroup> =
+    groups.browse(
+        query = query,
+        status = statusFilter,
+        sort = sort,
+        downloadedIds = downloadedIds,
+        newIds = newIds,
+        systemName = systemName,
+    )
+
+/** The games the screen is showing, in the order it shows them. */
+fun StoreUiState.visibleGames(systemName: (SystemID) -> String = { it.dbname }): List<StoreGame> =
+    visibleGroups(systemName).flatMap { it.games }
+
+/**
  * Applies the search box, the status chip and the sort order to the loaded catalog.
  *
  * Kept pure on purpose: the whole browsing behaviour is unit tested off-device, and the screen can
@@ -35,25 +55,34 @@ fun List<StoreGroup>.browse(
     sort: StoreSortOrder = StoreSortOrder.NAME,
     downloadedIds: Set<String> = emptySet(),
     newIds: Set<String> = emptySet(),
+    systemName: (SystemID) -> String = { it.dbname },
 ): List<StoreGroup> {
     val tokens = query.searchTokens()
 
     return mapNotNull { group ->
+        // A system answers to both its short name ("GBA") and its identifier ("gba"), because a
+        // catalog, a chip and a user may each name it differently.
+        val system = "${systemName(group.system)} ${group.system.dbname}".folded()
+
         val games =
             group.games
-                .filter { it.matchesQuery(tokens) && it.matchesStatus(status, downloadedIds, newIds) }
+                .filter { it.matchesQuery(tokens, system) && it.matchesStatus(status, downloadedIds, newIds) }
                 .sortedFor(sort, newIds)
 
         group.copy(games = games).takeIf { games.isNotEmpty() }
     }
 }
 
-private fun StoreGame.matchesQuery(tokens: List<String>): Boolean {
+private fun StoreGame.matchesQuery(
+    tokens: List<String>,
+    system: String,
+): Boolean {
     if (tokens.isEmpty()) return true
 
     val title = title.folded()
-    // Every word has to appear somewhere, so "zelda minish" finds "The Legend of Zelda - Minish Cap".
-    return tokens.all { title.contains(it) }
+    // Every word has to appear somewhere, so "zelda minish" finds "The Legend of Zelda - Minish
+    // Cap" and "gba mario" finds the Mario games of a system named GBA.
+    return tokens.all { title.contains(it) || system.contains(it) }
 }
 
 private fun StoreGame.matchesStatus(

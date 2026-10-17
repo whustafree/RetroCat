@@ -188,15 +188,51 @@ class StoreBrowsingTest {
     }
 
     @Test
-    fun `preload of an empty list is empty`() {
-        assertTrue(coverPreloadRange(firstVisible = 0, lastVisible = 0, size = 0).isEmpty())
-    }
-
-    @Test
     fun `preload covers a list shorter than the window`() {
         val range = coverPreloadRange(firstVisible = 0, lastVisible = 2, size = 3)
 
         assertEquals(0..2, range)
+    }
+
+    @Test
+    fun `a system can be asked for by name`() {
+        val games = groups.browse(query = "GBA", systemName = { "GBA" })
+
+        assertEquals(3, games.single().games.size)
+    }
+
+    @Test
+    fun `a system answers to its identifier as well as its name`() {
+        assertEquals(3, groups.browse(query = "gba").single().games.size)
+    }
+
+    @Test
+    fun `a title word and a system name together narrow to that system`() {
+        val games = groups.browse(query = "mario gba")
+
+        assertEquals(listOf("mario"), games.single().games.map { it.id })
+    }
+
+    @Test
+    fun `searching a word that is neither a title nor a system finds nothing`() {
+        assertTrue(groups.browse(query = "dreamcast").isEmpty())
+    }
+
+    @Test
+    fun `what the filters hide is not selected either`() {
+        val state =
+            StoreUiState(
+                groups = groups,
+                statusFilter = StoreStatusFilter.NOT_DOWNLOADED,
+                downloadedIds = setOf("zelda"),
+            )
+
+        assertEquals(listOf("mario", "pokemon"), state.visibleGames().map { it.id })
+    }
+
+    @Test
+    fun `preload of an empty list is empty`() {
+        assertTrue(coverPreloadRange(firstVisible = 0, lastVisible = 0, size = 0).isEmpty())
     }
 
     private fun game(

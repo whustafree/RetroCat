@@ -45,13 +45,15 @@ object StoreDownloadScheduler {
     fun enqueue(
         context: Context,
         game: StoreGame,
-    ) = enqueueUnique(context, game, ExistingWorkPolicy.KEEP)
+        wifiOnly: Boolean,
+    ) = enqueueUnique(context, game, ExistingWorkPolicy.KEEP, wifiOnly)
 
     /** Queues [game] again, replacing an attempt that failed. */
     fun retry(
         context: Context,
         game: StoreGame,
-    ) = enqueueUnique(context, game, ExistingWorkPolicy.REPLACE)
+        wifiOnly: Boolean,
+    ) = enqueueUnique(context, game, ExistingWorkPolicy.REPLACE, wifiOnly)
 
     /**
      * Queues a whole batch.
@@ -62,8 +64,18 @@ object StoreDownloadScheduler {
     fun enqueueAll(
         context: Context,
         games: List<StoreGame>,
+        wifiOnly: Boolean,
     ) {
-        games.forEach { game -> enqueue(context, game) }
+        games.forEach { game -> enqueue(context, game, wifiOnly) }
+    }
+
+    /** Queues again everything that gave up, replacing each failed attempt. */
+    fun retryAll(
+        context: Context,
+        games: List<StoreGame>,
+        wifiOnly: Boolean,
+    ) {
+        games.forEach { game -> retry(context, game, wifiOnly) }
     }
 
     fun cancel(
@@ -111,13 +123,16 @@ object StoreDownloadScheduler {
         context: Context,
         game: StoreGame,
         policy: ExistingWorkPolicy,
+        wifiOnly: Boolean,
     ) {
         val request =
             OneTimeWorkRequestBuilder<StoreDownloadWork>()
                 .setConstraints(
                     Constraints
                         .Builder()
-                        .setRequiredNetworkType(NetworkType.CONNECTED)
+                        // A catalog of a thousand ROMs can empty a data plan in one sitting, so the
+                        // user can ask for a network that does not charge by the byte.
+                        .setRequiredNetworkType(if (wifiOnly) NetworkType.UNMETERED else NetworkType.CONNECTED)
                         .build(),
                 )
                 .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 15, TimeUnit.SECONDS)

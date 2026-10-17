@@ -66,6 +66,19 @@ class StorePreferences(context: Context) {
         }
 
     /**
+     * Whether downloads wait for a network that is not metered.
+     *
+     * Off by default, which is how the store always behaved: the ROMs are big enough that a
+     * catalog of a thousand of them can empty a data plan, but holding downloads hostage without
+     * saying so would be worse.
+     */
+    var wifiOnly: Boolean
+        get() = preferences.getBoolean(KEY_WIFI_ONLY, false)
+        set(value) {
+            preferences.edit().putBoolean(KEY_WIFI_ONLY, value).apply()
+        }
+
+    /**
      * Ids of every game the last successful scan returned.
      *
      * The difference between this and the next scan is what the store marks as "new", which is how
@@ -91,6 +104,7 @@ class StorePreferences(context: Context) {
     companion object {
         private const val KEY_SOURCE = "store_source"
         private const val KEY_VIEW_MODE = "store_view_mode"
+        private const val KEY_WIFI_ONLY = "store_wifi_only"
         private const val KEY_KNOWN_IDS = "store_known_ids"
         private const val KEY_MANIFEST_URL = "store_manifest_url"
         private const val KEY_DRIVE_FOLDER_URL = "store_drive_folder_url"

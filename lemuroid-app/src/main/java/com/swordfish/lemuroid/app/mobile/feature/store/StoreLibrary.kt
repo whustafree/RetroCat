@@ -50,6 +50,21 @@ class StoreLibrary(
             downloadsRoot().walkTopDown().filter { it.isFile }.sumOf { it.length() }
         }.getOrDefault(0L)
 
+    /**
+     * Room left where the downloads are written.
+     *
+     * Asked of the folder that will actually hold them, so the warning before a bulk download is
+     * about the same disk the ROMs land on. The store's own folder is created by the first
+     * download, so an existing parent stands in until then. Zero means "no idea", and the screen
+     * then says nothing rather than warning about a made up number.
+     */
+    fun freeSpaceBytes(): Long =
+        runCatching {
+            var directory: File? = downloadsRoot()
+            while (directory != null && !directory.exists()) directory = directory.parentFile
+            directory?.usableSpace ?: 0L
+        }.getOrDefault(0L)
+
     private fun scannedRoot(): File {
         val preferenceKey = context.getString(com.swordfish.lemuroid.lib.R.string.pref_key_legacy_external_folder)
         val legacyFolder = SharedPreferencesHelper.getLegacySharedPreferences(context).getString(preferenceKey, null)

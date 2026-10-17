@@ -250,7 +250,7 @@
     <string name="catalog_filter_all">All</string>
     <string name="catalog_sort_name">A-Z</string>
     <string name="catalog_sort_recent">Recently played</string>
-    <string name="catalog_sort_favorites">Favorites</string>
+    <string name="catalog_sort_favorites">Only favorites</string>
     <string name="catalog_detail_play">Play</string>
     <string name="catalog_continue_playing">Continue playing</string>
     <string name="catalog_search_hint">Search games</string>
@@ -321,6 +321,21 @@
         <item quantity="one">%1$d game</item>
         <item quantity="other">%1$d games</item>
     </plurals>
+
+    <!-- The downloads while they happen. A catalog of a thousand games is fetched in batches, so
+         the panel above the list is where the batch is seen and fixed, not the single rows. -->
+    <string name="store_wifi_only">Wi-Fi only</string>
+    <string name="store_downloads_queued">%1$d queued</string>
+    <string name="store_downloads_downloading">%1$d downloading</string>
+    <string name="store_downloads_failed">%1$d failed</string>
+    <string name="store_downloads_retry_failed">Retry the failed ones</string>
+    <string name="store_downloads_cancel_all">Cancel all</string>
+
+    <!-- Said before queueing something that may not fit. Only shown when the catalog announced the
+         sizes and the device answered how much room is left, so the numbers are the real ones. -->
+    <string name="store_space_title">Not enough room?</string>
+    <string name="store_space_message">The games take %1$s and only %2$s are left on the device.</string>
+    <string name="store_space_confirm">Download anyway</string>
 
     <!-- Sources that are not what the store expects: it says so in full instead of showing a code. -->
     <string name="store_drive_not_a_folder">The link is not a Google Drive folder</string>

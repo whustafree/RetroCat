@@ -189,7 +189,7 @@
     <string name="catalog_filter_all">Todos</string>
     <string name="catalog_sort_name">A-Z</string>
     <string name="catalog_sort_recent">Jugados recientemente</string>
-    <string name="catalog_sort_favorites">Favoritos</string>
+    <string name="catalog_sort_favorites">Solo favoritos</string>
     <string name="catalog_detail_play">Jugar</string>
     <string name="catalog_continue_playing">Continuar jugando</string>
     <string name="catalog_search_hint">Buscar juegos</string>

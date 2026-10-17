@@ -67,6 +67,10 @@ data class StoreUiState(
     val sort: StoreSortOrder = StoreSortOrder.NAME,
     /** Games ticked for a bulk download. Empty means the catalog is being browsed, not picked. */
     val selection: Set<String> = emptySet(),
+    /** True when downloads are held back until the device is on a network that is not metered. */
+    val wifiOnly: Boolean = false,
+    /** Room left where the ROMs land, for the warning before a bulk download. Zero when unknown. */
+    val freeBytes: Long = 0L,
 ) {
     val isEmpty: Boolean
         get() = groups.isEmpty()
@@ -119,6 +123,7 @@ class StoreViewModel(
                 viewMode = preferences.viewMode,
                 location = preferences.location,
                 configured = preferences.isConfigured,
+                wifiOnly = preferences.wifiOnly,
             ),
         )
     val state: StateFlow<StoreUiState> = _state.asStateFlow()
@@ -182,23 +187,47 @@ class StoreViewModel(
         _state.update { it.copy(sort = sort) }
     }
 
+    /** Remembers whether downloads are allowed to use a metered connection. */
+    fun setWifiOnly(wifiOnly: Boolean) {
+        preferences.wifiOnly = wifiOnly
+        _state.update { it.copy(wifiOnly = wifiOnly) }
+    }
+
     /** Drops the search box and the chips, which is what "no results" offers to do. */
     fun clearFilters() {
         _state.update { it.copy(query = "", statusFilter = StoreStatusFilter.ALL) }
     }
 
     /** Queues [game] for download. WorkManager reports the progress back through [state]. */
-    fun download(game: StoreGame) {
-        StoreDownloadScheduler.enqueue(appContext, game)
+    fun download(game: StoreGame) = download(listOf(game))
+
+    /**
+     * Queues a batch the user asked for, in one go.
+     *
+     * Each game keeps its own piece of work, so one failure does not take the rest down with it.
+     */
+    fun download(games: List<StoreGame>) {
+        if (games.isEmpty()) return
+        StoreDownloadScheduler.enqueueAll(appContext, games, _state.value.wifiOnly)
     }
 
     /** Queues [game] again after a failure, replacing the failed attempt. */
     fun retryDownload(game: StoreGame) {
-        StoreDownloadScheduler.retry(appContext, game)
+        StoreDownloadScheduler.retry(appContext, game, _state.value.wifiOnly)
+    }
+
+    /** Queues again everything that gave up, so a bad connection is one tap to recover from. */
+    fun retryFailedDownloads() {
+        StoreDownloadScheduler.retryAll(appContext, _state.value.failedDownloads(), _state.value.wifiOnly)
     }
 
     fun cancelDownload(game: StoreGame) {
         StoreDownloadScheduler.cancel(appContext, game.id)
+    }
+
+    /** Stops everything queued or running, for the mistake of picking a thousand games at once. */
+    fun cancelAllDownloads() {
+        StoreDownloadScheduler.cancelAll(appContext)
     }
 
     /**
@@ -224,16 +253,19 @@ class StoreViewModel(
                 )
             }
 
-            refreshInstalledSize()
+            refreshStorage()
             LibraryIndexScheduler.scheduleLibrarySync(appContext)
         }
     }
 
-    /** Re-reads how much room the downloaded games take, off the main thread. */
-    private fun refreshInstalledSize() {
+    /** Re-reads the room the downloads take and the room that is left, off the main thread. */
+    private fun refreshStorage() {
         viewModelScope.launch {
-            val bytes = withContext(Dispatchers.IO) { storeLibrary.installedSizeBytes() }
-            _state.update { it.copy(installedBytes = bytes) }
+            val (installed, free) =
+                withContext(Dispatchers.IO) {
+                    storeLibrary.installedSizeBytes() to storeLibrary.freeSpaceBytes()
+                }
+            _state.update { it.copy(installedBytes = installed, freeBytes = free) }
         }
     }
 
@@ -253,19 +285,32 @@ class StoreViewModel(
         _state.update { it.copy(selection = emptySet()) }
     }
 
-    /** Picks the whole catalog, which together with the chips is how a bulk download starts. */
+    /**
+     * Ticks every game the filters are showing.
+     *
+     * With a thousand entries the interesting selection is "this system" or "what I have not
+     * installed yet", so selecting all has to mean all of what is on screen, not all of the store.
+     * The system name comes from the same helper the list uses, or the two would disagree about
+     * what "gba" found.
+     */
     fun selectAll() {
-        val ids = _state.value.groups.flatMap { group -> group.games.map { game -> game.id } }
-        _state.update { it.copy(selection = ids.toSet()) }
+        val ids =
+            _state.value
+                .visibleGames { systemId -> storeSystemName(appContext, systemId) }
+                .map { game -> game.id }
+                .toSet()
+        _state.update { it.copy(selection = ids) }
     }
 
-    /** Queues everything selected that is not installed yet, then leaves selection mode. */
-    fun downloadSelection() {
+    /**
+     * The ticked games that are not installed yet, in catalog order.
+     *
+     * This is what the selection bar is about to queue, so the screen can check it fits before
+     * handing it over.
+     */
+    fun selectedDownloads(): List<StoreGame> {
         val byId = _state.value.groups.flatMap { it.games }.associateBy { it.id }
-        val games = _state.value.selection.mapNotNull { byId[it] }.filter { it.id !in _state.value.downloadedIds }
-
-        StoreDownloadScheduler.enqueueAll(appContext, games)
-        clearSelection()
+        return _state.value.selection.mapNotNull { byId[it] }.filter { it.id !in _state.value.downloadedIds }
     }
 
     fun refresh() {
@@ -367,7 +412,7 @@ class StoreViewModel(
 
         _state.update { it.copy(downloads = downloads, downloadedIds = installed) }
 
-        if (installed.size > previousInstalledCount) refreshInstalledSize()
+        if (installed.size > previousInstalledCount) refreshStorage()
     }
 
     /**
@@ -388,9 +433,13 @@ class StoreViewModel(
         newIds: Set<String>,
         loading: Boolean,
     ) {
-        val (downloadedIds, installedBytes) =
+        val (downloadedIds, installedBytes, freeBytes) =
             withContext(Dispatchers.IO) {
-                storeLibrary.downloadedIds(manifest.games) to storeLibrary.installedSizeBytes()
+                Triple(
+                    storeLibrary.downloadedIds(manifest.games),
+                    storeLibrary.installedSizeBytes(),
+                    storeLibrary.freeSpaceBytes(),
+                )
             }
 
         _state.update {
@@ -403,6 +452,7 @@ class StoreViewModel(
                 issues = manifest.validate().map { issue -> formatIssue(issue) },
                 downloadedIds = downloadedIds,
                 installedBytes = installedBytes,
+                freeBytes = freeBytes,
                 newIds = newIds,
             )
         }

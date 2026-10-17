@@ -57,4 +57,13 @@
     <string name="store_delete_confirm">Eliminar</string>
     <string name="store_delete_failed">No se pudo eliminar el juego</string>
     <string name="store_refresh_failed">No se pudo actualizar el catálogo</string>
+    <string name="store_wifi_only">Solo por Wi-Fi</string>
+    <string name="store_downloads_queued">%1$d en cola</string>
+    <string name="store_downloads_downloading">%1$d descargando</string>
+    <string name="store_downloads_failed">%1$d fallidas</string>
+    <string name="store_downloads_retry_failed">Reintentar las fallidas</string>
+    <string name="store_downloads_cancel_all">Cancelar todo</string>
+    <string name="store_space_title">¿No cabe?</string>
+    <string name="store_space_message">Los juegos ocupan %1$s y solo quedan %2$s en el dispositivo.</string>
+    <string name="store_space_confirm">Descargar igualmente</string>
 </resources>

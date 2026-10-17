@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ViewList
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -70,6 +71,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
@@ -83,7 +85,6 @@ import coil.compose.AsyncImage
 import coil.imageLoader
 import coil.request.ImageRequest
 import com.swordfish.lemuroid.R
-import com.swordfish.lemuroid.lib.library.GameSystem
 import com.swordfish.lemuroid.lib.library.MetaSystemID
 import com.swordfish.lemuroid.lib.library.SystemID
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -121,6 +122,7 @@ fun StoreScreen(
     viewModel: StoreViewModel,
 ) {
     val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
     var selectedGame by remember { mutableStateOf<StoreGame?>(null) }
     var editingUrl by rememberSaveable { mutableStateOf(false) }
     val listState = rememberLazyListState()
@@ -129,14 +131,21 @@ fun StoreScreen(
     // download progress tick never re-sorts a thousand entries.
     val groups =
         remember(state.groups, state.query, state.statusFilter, state.sort, state.downloadedIds, state.newIds) {
-            state.groups.browse(
-                query = state.query,
-                status = state.statusFilter,
-                sort = state.sort,
-                downloadedIds = state.downloadedIds,
-                newIds = state.newIds,
-            )
+            state.visibleGroups { systemId -> storeSystemName(context, systemId) }
         }
+
+    // Downloads are queued from here rather than straight from the button, so one that would not fit
+    // can be confirmed first. Null means nothing is waiting for an answer.
+    var pendingDownloads by remember { mutableStateOf<List<StoreGame>?>(null) }
+    val queueDownloads: (List<StoreGame>) -> Unit = { games ->
+        val check = storeSpaceCheck(games, state.freeBytes)
+        if (check == null || check.fits) {
+            viewModel.download(games)
+            viewModel.clearSelection()
+        } else {
+            pendingDownloads = games
+        }
+    }
 
     // A new search starts at the top, whatever the user had scrolled to.
     LaunchedEffect(state.query, state.statusFilter, state.sort) {
@@ -163,7 +172,7 @@ fun StoreScreen(
                         count = state.selection.size,
                         onCancel = viewModel::clearSelection,
                         onSelectAll = viewModel::selectAll,
-                        onDownload = viewModel::downloadSelection,
+                        onDownload = { queueDownloads(viewModel.selectedDownloads()) },
                     )
                 } else if (!state.isEmpty) {
                     StoreSearchBar(query = state.query, onQueryChange = viewModel::changeQuery)
@@ -172,6 +181,16 @@ fun StoreScreen(
                         state = state,
                         onStatusSelected = viewModel::selectStatusFilter,
                         onSortSelected = viewModel::selectSort,
+                        onWifiOnlyChange = viewModel::setWifiOnly,
+                    )
+                }
+
+                val summary = state.downloadSummary()
+                if (!state.selectionMode && summary.active) {
+                    StoreDownloadsPanel(
+                        summary = summary,
+                        onRetryFailed = viewModel::retryFailedDownloads,
+                        onCancelAll = viewModel::cancelAllDownloads,
                     )
                 }
 
@@ -193,10 +212,23 @@ fun StoreScreen(
                 download = state.downloads[game.id],
                 downloaded = game.id in state.downloadedIds,
                 onDismiss = { selectedGame = null },
-                onDownload = { viewModel.download(game) },
+                onDownload = { queueDownloads(listOf(game)) },
                 onCancel = { viewModel.cancelDownload(game) },
                 onRetry = { viewModel.retryDownload(game) },
                 onDelete = { viewModel.delete(game) },
+            )
+        }
+
+        pendingDownloads?.let { games ->
+            val check = storeSpaceCheck(games, state.freeBytes)
+            StoreSpaceDialog(
+                check = check,
+                onDismiss = { pendingDownloads = null },
+                onConfirm = {
+                    pendingDownloads = null
+                    viewModel.download(games)
+                    viewModel.clearSelection()
+                },
             )
         }
 
@@ -607,6 +639,7 @@ private fun StoreFilterRow(
     state: StoreUiState,
     onStatusSelected: (StoreStatusFilter) -> Unit,
     onSortSelected: (StoreSortOrder) -> Unit,
+    onWifiOnlyChange: (Boolean) -> Unit,
 ) {
     LazyRow(
         modifier = Modifier.fillMaxWidth(),
@@ -651,7 +684,111 @@ private fun StoreFilterRow(
         item(key = "sort") {
             StoreSortMenu(sort = state.sort, onSortSelected = onSortSelected)
         }
+
+        // A setting among the filters is a compromise, but it belongs next to what is downloaded
+        // and it has to be reachable before a download starts, not after one fails.
+        item(key = "wifi_only") {
+            StoreChip(
+                label = stringResource(R.string.store_wifi_only),
+                selected = state.wifiOnly,
+                onClick = { onWifiOnlyChange(!state.wifiOnly) },
+                leadingIcon = Icons.Filled.Wifi,
+            )
+        }
     }
+}
+
+/**
+ * What the downloads are doing, above the catalog.
+ *
+ * The two actions are the ones that are impossible to do by hand over a thousand rows: giving up on
+ * everything at once, and starting again everything that failed.
+ */
+@Composable
+private fun StoreDownloadsPanel(
+    summary: StoreDownloadSummary,
+    onRetryFailed: () -> Unit,
+    onCancelAll: () -> Unit,
+) {
+    val parts =
+        buildList {
+            if (summary.queued > 0) add(stringResource(R.string.store_downloads_queued, summary.queued))
+            if (summary.downloading > 0) add(stringResource(R.string.store_downloads_downloading, summary.downloading))
+            if (summary.failed > 0) add(stringResource(R.string.store_downloads_failed, summary.failed))
+        }
+
+    Surface(color = MaterialTheme.colorScheme.surfaceVariant) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Schedule,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Text(
+                modifier = Modifier.weight(1f),
+                text = parts.joinToString(" · "),
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            if (summary.failed > 0) {
+                TextButton(onClick = onRetryFailed) {
+                    Text(stringResource(R.string.store_downloads_retry_failed))
+                }
+            }
+
+            TextButton(onClick = onCancelAll) {
+                Text(stringResource(R.string.store_downloads_cancel_all))
+            }
+        }
+    }
+}
+
+/**
+ * The warning before queueing something that may not fit.
+ *
+ * Only shown when the catalog announced sizes and the device answered how much room is left, so it
+ * never guesses: the numbers it shows are the ones it has.
+ */
+@Composable
+private fun StoreSpaceDialog(
+    check: StoreSpaceCheck?,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.store_space_title)) },
+        text = {
+            Text(
+                stringResource(
+                    R.string.store_space_message,
+                    formatBytes(check?.neededBytes ?: 0L),
+                    formatBytes(check?.freeBytes ?: 0L),
+                ),
+            )
+        },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Text(stringResource(R.string.store_space_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.store_cancel))
+            }
+        },
+    )
 }
 
 @Composable
@@ -659,11 +796,22 @@ private fun StoreChip(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
+    leadingIcon: ImageVector? = null,
 ) {
     FilterChip(
         selected = selected,
         onClick = onClick,
         label = { Text(label, style = MaterialTheme.typography.labelLarge) },
+        leadingIcon =
+            leadingIcon?.let { icon ->
+                {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(FilterChipDefaults.IconSize),
+                    )
+                }
+            },
         colors =
             FilterChipDefaults.filterChipColors(
                 selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -924,11 +1072,7 @@ private fun StoreSystemHeader(
     count: Int,
 ) {
     val context = LocalContext.current
-    val title =
-        remember(system) {
-            runCatching { context.getString(GameSystem.findById(system.dbname).shortTitleResId) }
-                .getOrDefault(system.dbname)
-        }
+    val title = remember(system) { storeSystemName(context, system) }
 
     Column(
         modifier =
@@ -1621,12 +1765,13 @@ private fun metadataLine(
         }
     }
 
+/**
+ * How a system is named, e.g. "GBA", in the same words the search box accepts.
+ */
 private fun systemLabel(
     context: Context,
     game: StoreGame,
 ): String {
     val systemId = game.resolveSystemId() ?: return game.system
-    return runCatching {
-        context.getString(GameSystem.findById(systemId.dbname).shortTitleResId)
-    }.getOrDefault(game.system)
+    return storeSystemName(context, systemId)
 }
