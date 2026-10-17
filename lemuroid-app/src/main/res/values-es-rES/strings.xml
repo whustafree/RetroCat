@@ -193,14 +193,14 @@
     <string name="catalog_detail_play">Jugar</string>
     <string name="catalog_continue_playing">Continuar jugando</string>
     <string name="catalog_search_hint">Buscar juegos</string>
-    <string name="catalog_search_clear">Borrar búsqueda</string>
-    <string name="catalog_loading_more">Cargando más…</string>
-    <string name="catalog_layout">Diseño</string>
+    <string name="catalog_search_clear">Borrar bÃºsqueda</string>
+    <string name="catalog_loading_more">Cargando mÃ¡sâ€¦</string>
+    <string name="catalog_layout">DiseÃ±o</string>
     <string name="catalog_group_letters">Agrupar por letra</string>
     <string name="catalog_density_compact">Compacto</string>
     <string name="catalog_density_regular">Normal</string>
     <string name="catalog_density_comfortable">Amplio</string>
     <string name="catalog_detail_no_screenshot">Sin captura disponible</string>
-    <string name="catalog_detail_favorite">Añadir a favoritos</string>
+    <string name="catalog_detail_favorite">AÃ±adir a favoritos</string>
     <string name="catalog_detail_unfavorite">Quitar de favoritos</string>
 </resources>

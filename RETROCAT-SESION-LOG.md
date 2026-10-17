@@ -607,13 +607,35 @@ inicio a un hueco negro hasta que Compose dibujaba.
 
 Build, APK (`assembleFreeDynamic`) y tests: `BUILD SUCCESSFUL` y **81 tests, 0 fallos**.
 
+---
+
+## 17-10-2026 (7) — Español, de verdad
+
+La traducción al español venía de Lemuroid y estaba a medias: **122 textos** visibles seguían en
+inglés, casi todos los ajustes finos de cada núcleo (`Salto de fotogramas`, `Corrección de color`,
+`Estela del LCD`, `Recompilador dinámico`…) y sus valores (`Activada`, `S-Vídeo`, `Izquierda -
+Derecha`…), más unos pocos de la interfaz (`Jugar`, `Continuar`, `Horizontal`, `Vertical`, los mandos
+predeterminados de arcade y Mega Drive).
+
+- Se añaden en `values-es-rES/extra_strings.xml`, un fichero solo para esto. Android junta todos los
+  ficheros de una misma carpeta de idioma, así que no hay que tocar el `strings.xml` heredado.
+- Y ahí apareció un fallo de verdad: en ese `strings.xml` había **5 bytes en Windows-1252 dentro de un
+  fichero UTF-8**, justo en los textos del catálogo que se añadieron en su día. En pantalla se leía
+  `Borrar b? squeda`, `Cargando m? s?`, `Dise? o`, `A? adir a favoritos`. Reparado byte a byte y
+  verificado: los cuatro ficheros de `values-es-rES` son UTF-8 válido, comprobado con un decodificador
+  estricto.
+- Los nombres de sistema (`Game Boy Advance`, `Nintendo 3DS`…) y las abreviaturas se quedan como
+  están: son nombres propios, igual que en el resto de idiomas.
+
+Build y tests: `BUILD SUCCESSFUL` y **81 tests, 0 fallos**.
+
 ### Pendiente
 
 - El **banner de Android TV** (`ic_banner`) sigue siendo el de Lemuroid: hay que rehacerlo con la
   marca de RetroCat cuando se toque el modo TV.
 - Los 6 ítems de UI acordados al principio (siguen aplazados).
 - Google Sign-In (OAuth, `drive.readonly`) si algún día hace falta acceso a carpetas **privadas**.
-- Español completo, CI con tests y ktlint, changelog automático.
+- CI con tests y ktlint, changelog automático.
 
 
 

@@ -20,8 +20,8 @@ val localProperties =
 
 android {
     defaultConfig {
-        versionCode = 258
-        versionName = "1.19.5-retrocat" // Always remember to update Cores Tag!
+        versionCode = 259
+        versionName = "1.19.6-retrocat" // Always remember to update Cores Tag!
         applicationId = "com.retrocat.lemuroid"
     }
     flavorDimensions += listOf("opensource", "cores")

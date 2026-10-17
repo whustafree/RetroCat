@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Lo que le faltaba a la traduccion al espanol heredada de Lemuroid: los ajustes propios de cada
+  nucleo y sus valores, mas unos pocos textos de la interfaz.
+
+  Va en su propio fichero porque strings.xml esta en Windows-1252 y este en UTF-8: mezclarlos
+  romperia los acentos. Android junta todos los ficheros de values-es-rES, asi que da igual en cual
+  este cada texto.
+-->
+<resources>
+    <!-- Interfaz -->
+    <string name="game_process_another_game_running">Cierra el juego actual antes de iniciar otro</string>
+    <string name="catalog_play">Jugar</string>
+    <string name="catalog_resume">Continuar</string>
+    <string name="catalog_show_menu">Mostrar menú</string>
+    <string name="catalog_hide_menu">Ocultar menú</string>
+    <string name="catalog_double_tap_hint">Toca dos veces para jugar</string>
+    <string name="local_storage">Almacenamiento local</string>
+
+    <!-- Mandos -->
+    <string name="controller_default">Predeterminado</string>
+    <string name="controller_standard">Estándar</string>
+    <string name="controller_dualshock">DualShock</string>
+    <string name="controller_landscape">Horizontal</string>
+    <string name="controller_portrait">Vertical</string>
+    <string name="controller_arcade_4">Predeterminado (4 botones)</string>
+    <string name="controller_arcade_6">Predeterminado (6 botones)</string>
+    <string name="controller_genesis_3">Predeterminado (3 botones)</string>
+    <string name="controller_genesis_6">Predeterminado (6 botones)</string>
+    <string name="controller_dos_auto">Automático</string>
+    <string name="controller_dos_mouse_left">Ratón con el stick izquierdo</string>
+    <string name="controller_dos_mouse_right">Ratón con el stick derecho</string>
+
+    <!-- Ajustes de los núcleos -->
+    <string name="setting_stella_filter">Efecto de TV</string>
+    <string name="setting_stella_crop_hoverscan">Recortar bordes horizontales</string>
+    <string name="setting_fceumm_overscan_h">Recortar bordes horizontales</string>
+    <string name="setting_fceumm_overscan_v">Recortar bordes verticales</string>
+    <string name="setting_fceumm_nospritelimit">Sin límite de sprites</string>
+    <string name="setting_genesis_plus_gx_blargg_ntsc_filter">Efecto de TV</string>
+    <string name="setting_genesis_plus_gx_overscan">Bordes</string>
+    <string name="setting_genesis_plus_gx_lcd_filter">Estela del LCD</string>
+    <string name="setting_genesis_plus_gx_no_sprite_limit">Sin límite de sprites</string>
+    <string name="setting_gambatte_gb_colorization">Coloreado</string>
+    <string name="setting_gambatte_gb_internal_palette">Paleta interna</string>
+    <string name="setting_gambatte_mix_frames">Estela del LCD</string>
+    <string name="setting_gambatte_dark_filter_level">Oscurecer la pantalla</string>
+    <string name="setting_gambatte_gbc_color_correction">Corrección de color</string>
+    <string name="setting_mgba_solar_sensor_level">Nivel del sensor solar</string>
+    <string name="setting_mgba_interframe_blending">Estela del LCD</string>
+    <string name="setting_mgba_frameskip">Salto de fotogramas</string>
+    <string name="setting_mgba_color_correction">Corrección de color</string>
+    <string name="setting_mupen64plus_43screensize">Tamaño de pantalla 4:3</string>
+    <string name="setting_mupen64plus_cpucore">Recompilador dinámico</string>
+    <string name="setting_mupen64plus_BilinearMode">Modo bilineal</string>
+    <string name="setting_mupen64plus_pak1">Pak del jugador 1</string>
+    <string name="setting_mupen64plus_pak2">Pak del jugador 2</string>
+    <string name="setting_pcsx_rearmed_frameskip">Salto de fotogramas</string>
+    <string name="setting_pcsx_rearmed_drc">Recompilador dinámico</string>
+    <string name="setting_ppsspp_auto_frameskip">Salto de fotogramas automático</string>
+    <string name="setting_ppsspp_frameskip">Salto de fotogramas</string>
+    <string name="setting_ppsspp_cpu_core">Recompilador dinámico</string>
+    <string name="setting_ppsspp_internal_resolution">Resolución</string>
+    <string name="setting_ppsspp_texture_scaling_level">Nivel de escalado de texturas</string>
+    <string name="setting_ppsspp_texture_scaling_type">Tipo de escalado de texturas</string>
+    <string name="setting_ppsspp_texture_filtering">Filtrado de texturas</string>
+    <string name="setting_citra_layout_option">Disposición de las pantallas</string>
+    <string name="setting_citra_resolution_factor">Factor de resolución</string>
+    <string name="setting_citra_use_acc_geo_shaders">Shaders geométricos precisos</string>
+    <string name="setting_citra_use_acc_mul">Multiplicación precisa</string>
+    <string name="setting_desmume_frameskip">Salto de fotogramas</string>
+    <string name="setting_desmume_screens_layout">Disposición de las pantallas</string>
+    <string name="setting_fbneo_cpu_speed_adjust">Velocidad de la CPU</string>
+    <string name="setting_fbneo_frameskip">Salto de fotogramas</string>
+    <string name="setting_handy_rot">Rotación de la pantalla</string>
+    <string name="setting_melonds_jit_enable">Recompilador dinámico</string>
+    <string name="setting_melonds_mic_input">Entrada de micrófono</string>
+    <string name="setting_melonds_screen_layout">Disposición de las pantallas</string>
+    <string name="setting_melonds_threaded_renderer">Renderizado multihilo</string>
+    <string name="setting_wswan_mono_palette">Paleta monocroma</string>
+    <string name="setting_wswan_rotate_display">Rotar la pantalla</string>
+
+    <!-- Valores de esos ajustes -->
+    <string name="value_citra_layout_option_sidebyside">Izquierda - Derecha</string>
+    <string name="value_citra_layout_option_topbottom">Arriba - Abajo</string>
+    <string name="value_desmume_screens_layout_leftright">Izquierda - Derecha</string>
+    <string name="value_desmume_screens_layout_topbottom">Arriba - Abajo</string>
+    <string name="value_gambatte_gbc_color_correction_always">Activada</string>
+    <string name="value_gambatte_gbc_color_correction_disabled">Desactivada</string>
+    <string name="value_gambatte_mix_frames_disabled">Desactivada</string>
+    <string name="value_gambatte_mix_frames_mix">Simple</string>
+    <string name="value_gambatte_mix_frames_lcd_ghosting">Estela del LCD (precisa)</string>
+    <string name="value_gambatte_mix_frames_lcd_ghosting_fast">Estela del LCD (rápida)</string>
+    <string name="value_genesis_plus_gx_blargg_ntsc_filter_disabled">Desactivado</string>
+    <string name="value_genesis_plus_gx_blargg_ntsc_filter_monochrome">Monocromo</string>
+    <string name="value_genesis_plus_gx_blargg_ntsc_filter_composite">Compuesto</string>
+    <string name="value_genesis_plus_gx_blargg_ntsc_filter_svideo">S-Vídeo</string>
+    <string name="value_genesis_plus_gx_blargg_ntsc_filter_rgb">RGB</string>
+    <string name="value_genesis_plus_gx_overscan_disabled">Desactivado</string>
+    <string name="value_genesis_plus_gx_overscan_topbottom">Arriba/Abajo</string>
+    <string name="value_genesis_plus_gx_overscan_leftright">Izquierda/Derecha</string>
+    <string name="value_genesis_plus_gx_overscan_full">Completo</string>
+    <string name="value_handy_rot_none">0</string>
+    <string name="value_handy_rot_90">90</string>
+    <string name="value_handy_rot_270">270</string>
+    <string name="value_melonds_mic_input_microphone">Micrófono real</string>
+    <string name="value_melonds_mic_input_blow">Simular soplidos</string>
+    <string name="value_melonds_screen_layout_topbottom">Arriba - Abajo</string>
+    <string name="value_melonds_screen_layout_leftright">Izquierda - Derecha</string>
+    <string name="value_melonds_screen_layout_hybridtop">Híbrida arriba</string>
+    <string name="value_melonds_screen_layout_hybridbottom">Híbrida abajo</string>
+    <string name="value_mgba_color_correction_off">Desactivada</string>
+    <string name="value_mgba_color_correction_gba">Activada</string>
+    <string name="value_mgba_frameskip_disabled">Desactivado</string>
+    <string name="value_mgba_frameskip_auto">Automático</string>
+    <string name="value_mgba_interframe_blending_off">Desactivada</string>
+    <string name="value_mgba_interframe_blending_mix">Simple</string>
+    <string name="value_mgba_interframe_blending_lcd_ghosting">Estela del LCD (precisa)</string>
+    <string name="value_mgba_interframe_blending_lcd_ghosting_fast">Estela del LCD (rápida)</string>
+    <string name="value_mupen64plus_cpucore_dynamicrecompiler">Recompilador dinámico</string>
+    <string name="value_mupen64plus_cpucore_pureinterpreter">Intérprete puro</string>
+    <string name="value_mupen64plus_cpucore_cachedinterpreter">Intérprete con caché</string>
+    <string name="value_mupen64plus_bilinearmode_standard">Estándar</string>
+    <string name="value_mupen64plus_bilinearmode_3point">3 puntos</string>
+    <string name="value_mupen64plus_mupen64plus_pak1_memory">Memoria</string>
+    <string name="value_mupen64plus_mupen64plus_pak1_rumble">Vibración</string>
+    <string name="value_mupen64plus_mupen64plus_pak1_none">Ninguno</string>
+    <string name="value_mupen64plus_mupen64plus_pak2_none">Ninguno</string>
+    <string name="value_mupen64plus_mupen64plus_pak2_rumble">Vibración</string>
+    <string name="value_ppsspp_cpu_core_jit">JIT</string>
+    <string name="value_ppsspp_cpu_core_irjit">IR JIT</string>
+    <string name="value_ppsspp_cpu_core_interpreter">Intérprete</string>
+    <string name="value_stella_filter_badlyadjusted">Mal ajustado</string>
+    <string name="value_stella_filter_composite">Compuesto</string>
+    <string name="value_stella_filter_disabled">Desactivado</string>
+    <string name="value_stella_filter_rgb">RGB</string>
+    <string name="value_stella_filter_svideo">S-Vídeo</string>
+    <string name="value_wswan_rotate_display_landscape">Horizontal</string>
+    <string name="value_wswan_rotate_display_portrait">Vertical</string>
+</resources>
