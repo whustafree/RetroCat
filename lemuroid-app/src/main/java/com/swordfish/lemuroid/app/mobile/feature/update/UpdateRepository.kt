@@ -1,5 +1,9 @@
 package com.swordfish.lemuroid.app.mobile.feature.update
 
+import com.swordfish.lemuroid.app.shared.network.HttpFailure
+import com.swordfish.lemuroid.app.shared.network.NetworkFailure
+import com.swordfish.lemuroid.app.shared.network.NetworkFailureException
+import com.swordfish.lemuroid.app.shared.network.withNetworkRetry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
@@ -66,8 +70,14 @@ internal data class GithubAsset(
 class UpdateRepository(
     private val okHttpClient: OkHttpClient,
 ) {
-    /** The newest published release that has an APK, or null when GitHub cannot be read. */
-    suspend fun latest(): UpdateRelease? = withContext(Dispatchers.IO) { fetchLatest() }
+    /**
+     * The newest published release that has an APK, or null when no release carries one.
+     *
+     * A failure to read GitHub is thrown rather than reported as "nothing new": the caller decides
+     * whether that is worth telling the user about, and can say what actually happened. Transient
+     * failures are tried again before giving up.
+     */
+    suspend fun latest(): UpdateRelease? = withContext(Dispatchers.IO) { withNetworkRetry { fetchLatest() } }
 
     private fun fetchLatest(): UpdateRelease? {
         val request =
@@ -78,14 +88,16 @@ class UpdateRepository(
 
         val body =
             okHttpClient.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return null
-                response.body?.string() ?: return null
+                if (!response.isSuccessful) throw HttpFailure(response.code)
+
+                response.body?.string()
+                    ?: throw NetworkFailureException(NetworkFailure.INVALID_CONTENT, "GitHub returned an empty body")
             }
 
         val releases =
             runCatching { json.decodeFromString(ListSerializer(GithubRelease.serializer()), body) }
                 .getOrNull()
-                ?: return null
+                ?: throw NetworkFailureException(NetworkFailure.INVALID_CONTENT, "GitHub returned something unreadable")
 
         return releases.asSequence()
             .filter { !it.draft && !it.prerelease }

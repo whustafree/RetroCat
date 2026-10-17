@@ -101,7 +101,6 @@
     <string name="update_available_message">RetroCat %1$s is published. The APK is downloaded from GitHub and the system installer finishes the job.</string>
     <string name="update_install">Download and install</string>
     <string name="update_not_now">Not now</string>
-    <string name="update_check_failed">Could not check for updates</string>
     <string name="update_download_failed">Could not download the update</string>
 
     <string name="game_context_menu_add_to_favorites">Add to favorites</string>
@@ -322,5 +321,20 @@
         <item quantity="one">%1$d game</item>
         <item quantity="other">%1$d games</item>
     </plurals>
+
+    <!-- Sources that are not what the store expects: it says so in full instead of showing a code. -->
+    <string name="store_drive_not_a_folder">The link is not a Google Drive folder</string>
+    <string name="store_drive_not_listable">The folder could not be read. Share it as \"anyone with the link\"</string>
+
+    <!-- Why something that talks to a server did not work. Said in the user's language, never a
+         raw exception: the technical detail belongs in the log, not on the screen. -->
+    <string name="network_error_offline">No connection. Check your network and try again</string>
+    <string name="network_error_timeout">The server took too long to answer</string>
+    <string name="network_error_server">The server answered with an error. Try again in a while</string>
+    <string name="network_error_not_found">There is nothing at that address</string>
+    <string name="network_error_content">The answer could not be read</string>
+    <string name="network_error_corrupt">The downloaded file does not match the catalog</string>
+    <string name="network_error_not_shared">That folder is not shared publicly</string>
+    <string name="network_error_unknown">Something went wrong. Try again</string>
 
 </resources>

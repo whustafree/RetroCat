@@ -14,6 +14,5 @@
     <string name="update_available_message">Ya está publicada la versión RetroCat %1$s. El APK se descarga desde GitHub y el instalador del sistema termina el trabajo.</string>
     <string name="update_install">Descargar e instalar</string>
     <string name="update_not_now">Ahora no</string>
-    <string name="update_check_failed">No se pudo comprobar la actualización</string>
     <string name="update_download_failed">No se pudo descargar la actualización</string>
 </resources>

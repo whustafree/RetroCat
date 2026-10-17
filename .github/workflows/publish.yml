@@ -18,6 +18,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # The changelog is written from the commit history between two tags, so the full
+          # history has to be there (checkout fetches a single commit by default).
+          fetch-depth: 0
 
       - name: set up JDK 17
         uses: actions/setup-java@v4
@@ -69,6 +73,24 @@ jobs:
           cp lemuroid-app/build/outputs/apk/freeDynamic/release/*.apk "dist/RetroCat-${GITHUB_REF_NAME}.apk"
           ls -la dist
 
+      # The changelog is the list of commits since the previous release, written from the history
+      # rather than kept by hand: whatever was not said in a commit message was not done.
+      - name: Collect the changes
+        if: startsWith(github.ref_name, 'v')
+        id: notes
+        continue-on-error: true
+        run: |
+          previous=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || echo "")
+          range=${previous:+${previous}..${GITHUB_REF_NAME}}
+          {
+            echo "body<<RETROCAT_NOTES_EOF"
+            echo "### Cambios"
+            echo
+            git log --pretty=format:'- %s (%h)' ${range}
+            echo
+            echo "RETROCAT_NOTES_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -87,4 +109,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: RetroCat ${{ github.ref_name }}
+          body: ${{ steps.notes.outputs.body }}
           files: dist/*.apk

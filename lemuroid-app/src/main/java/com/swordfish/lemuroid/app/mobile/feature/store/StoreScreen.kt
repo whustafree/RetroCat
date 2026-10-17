@@ -1068,8 +1068,7 @@ private fun StoreGameRow(
 }
 
 /** Size of a game, when the catalog announced one, as the row's second line. */
-private fun gameRowMeta(game: StoreGame): String? =
-    game.sizeBytes?.takeIf { it > 0L }?.let { formatBytes(it) }
+private fun gameRowMeta(game: StoreGame): String? = game.sizeBytes?.takeIf { it > 0L }?.let { formatBytes(it) }
 
 @Composable
 private fun StoreIssues(issues: List<String>) {

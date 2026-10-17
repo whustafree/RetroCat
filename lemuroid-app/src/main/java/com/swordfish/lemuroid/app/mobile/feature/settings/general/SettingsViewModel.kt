@@ -12,6 +12,9 @@ import com.swordfish.lemuroid.app.mobile.feature.update.UpdateRelease
 import com.swordfish.lemuroid.app.mobile.feature.update.UpdateRepository
 import com.swordfish.lemuroid.app.mobile.feature.update.UpdateVersions
 import com.swordfish.lemuroid.app.shared.library.PendingOperationsMonitor
+import com.swordfish.lemuroid.app.shared.network.NetworkFailure
+import com.swordfish.lemuroid.app.shared.network.asNetworkFailure
+import com.swordfish.lemuroid.app.shared.network.networkErrorMessage
 import com.swordfish.lemuroid.app.shared.settings.SettingsInteractor
 import com.swordfish.lemuroid.lib.savesync.SaveSyncManager
 import kotlinx.coroutines.Dispatchers
@@ -99,7 +102,7 @@ class SettingsViewModel(
      * Asks GitHub for the newest published build.
      *
      * Being unable to ask is not the same as being up to date, so the two are told apart: the entry
-     * says so instead of quietly pretending there is nothing newer.
+     * says what actually went wrong instead of quietly pretending there is nothing newer.
      */
     fun checkForUpdates() {
         if (_updateState.value is UpdateState.Checking) return
@@ -107,14 +110,17 @@ class SettingsViewModel(
         _updateState.value = UpdateState.Checking
 
         viewModelScope.launch {
-            val release = runCatching { updateRepository.latest() }.getOrNull()
-
             _updateState.value =
-                when {
-                    release == null -> UpdateState.Failed(context.getString(R.string.update_check_failed))
-                    UpdateVersions.isNewer(release.version, currentVersion) -> UpdateState.Available(release)
-                    else -> UpdateState.UpToDate
-                }
+                runCatching { updateRepository.latest() }.fold(
+                    onSuccess = { release ->
+                        when {
+                            release == null -> UpdateState.UpToDate
+                            UpdateVersions.isNewer(release.version, currentVersion) -> UpdateState.Available(release)
+                            else -> UpdateState.UpToDate
+                        }
+                    },
+                    onFailure = { failure -> UpdateState.Failed(context.networkErrorMessage(failure)) },
+                )
         }
     }
 
@@ -125,13 +131,24 @@ class SettingsViewModel(
         viewModelScope.launch {
             updateInstaller.downloadAndInstall(release).fold(
                 onSuccess = { _updateState.value = UpdateState.Idle },
-                onFailure = {
-                    _updateState.value = UpdateState.Failed(context.getString(R.string.update_download_failed))
-                },
+                onFailure = { failure -> _updateState.value = UpdateState.Failed(downloadFailureMessage(failure)) },
             )
             // On success the system installer is on screen; the entry waits for the user to come back.
         }
     }
+
+    /**
+     * What to say when the update could not be installed.
+     *
+     * A network failure has a sentence of its own; anything else (no room for the APK, nothing on
+     * the device able to install it) keeps the generic one instead of blaming the connection.
+     */
+    private fun downloadFailureMessage(failure: Throwable): String =
+        if (failure.asNetworkFailure() == NetworkFailure.UNKNOWN) {
+            context.getString(R.string.update_download_failed)
+        } else {
+            context.networkErrorMessage(failure)
+        }
 
     fun dismissUpdate() {
         _updateState.value = UpdateState.Idle

@@ -3,6 +3,9 @@ package com.swordfish.lemuroid.app.mobile.feature.update
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.FileProvider
+import com.swordfish.lemuroid.app.shared.network.HttpFailure
+import com.swordfish.lemuroid.app.shared.network.NetworkFailure
+import com.swordfish.lemuroid.app.shared.network.NetworkFailureException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -45,9 +48,13 @@ class UpdateInstaller(
 
         val request = Request.Builder().url(release.apkUrl).build()
         okHttpClient.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) error("The update returned HTTP ${response.code}")
+            if (!response.isSuccessful) throw HttpFailure(response.code)
 
-            val body = response.body ?: error("The update returned an empty body")
+            val body = response.body
+            if (body == null) {
+                throw NetworkFailureException(NetworkFailure.INVALID_CONTENT, "The update returned an empty body")
+            }
+
             partial.outputStream().use { output -> body.byteStream().copyTo(output) }
         }
 

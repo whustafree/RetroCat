@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.work.WorkInfo
 import com.swordfish.lemuroid.R
 import com.swordfish.lemuroid.app.shared.library.LibraryIndexScheduler
+import com.swordfish.lemuroid.app.shared.network.networkErrorMessage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -307,7 +308,7 @@ class StoreViewModel(
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (t: Throwable) {
-                _state.update { it.copy(loading = false, error = t.message ?: t.javaClass.simpleName) }
+                _state.update { it.copy(loading = false, error = appContext.networkErrorMessage(t)) }
             }
         }
     }

@@ -53,7 +53,8 @@ class StoreLibrary(
     private fun scannedRoot(): File {
         val preferenceKey = context.getString(com.swordfish.lemuroid.lib.R.string.pref_key_legacy_external_folder)
         val legacyFolder = SharedPreferencesHelper.getLegacySharedPreferences(context).getString(preferenceKey, null)
-        return legacyFolder?.takeIf { it.isNotBlank() }?.let { File(it) } ?: directoriesManager.getInternalRomsDirectory()
+        return legacyFolder?.takeIf { it.isNotBlank() }?.let { File(it) }
+            ?: directoriesManager.getInternalRomsDirectory()
     }
 
     companion object {

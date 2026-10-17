@@ -629,13 +629,48 @@ predeterminados de arcade y Mega Drive).
 
 Build y tests: `BUILD SUCCESSFUL` y **81 tests, 0 fallos**.
 
+---
+
+## 17-10-2026 (8) — Reintentos, errores que se entienden y CI
+
+Lo que se veía cuando algo fallaba era la verdad cruda de Java: `Unable to resolve host
+"www.googleapis.com"`, `Software caused connection abort`, `The download returned HTTP 503`. Y un
+corte de red de dos segundos dejaba el catálogo en blanco, sin más.
+
+- **Reintentos donde importan.** El catálogo (manifiesto o carpeta de Drive), la comprobación de
+  actualizaciones y la descarga del APK se piden hasta **3 veces**, con espera creciente (0,8 s →
+  1,6 s → 3,2 s), y solo cuando el fallo es de los que pueden desaparecer solos: sin conexión,
+  tiempo agotado o error del servidor. Un 404 o una respuesta ilegible no se piden tres veces: se
+  informan a la primera.
+- **Errores con nombre propio.** Se añade `NetworkFailure` (`app/shared/network/`): clasifica
+  cualquier excepción —siguiendo la cadena de causas, que es donde está el fallo de verdad— en
+  *sin conexión, tiempo agotado, error del servidor, no existe, respuesta ilegible, archivo
+  corrupto, carpeta no compartida*. Cada uno tiene su frase en inglés y en español, así que en
+  pantalla se lee «Sin conexión. Comprueba la red e inténtalo de nuevo» en lugar de un volcado.
+  El detalle técnico se queda en el registro.
+- Los dos casos que sí necesitan explicación propia la tienen: pegar un enlace que no es una carpeta
+  de Drive, o una carpeta que no está compartida como «cualquier persona con el enlace».
+- La decisión de reintentar una descarga ya no se toma buscando `"Checksum mismatch"` dentro del
+  texto del mensaje: ahora el fallo viene tipado (`CORRUPT`, `SERVER`…). Aquello era frágil y
+  funcionaba por casualidad.
+- **CI de verdad.** El `checkstyle.yml` heredado apuntaba a la rama `master` (aquí es `main`) y pedía
+  submódulos que este repositorio no tiene, así que nunca llegó a ejecutarse. Se sustituye por
+  `ci.yml`: en cada push y *pull request* a `main` corre los tests unitarios y `ktlintCheck`. Al
+  activarlo salieron unos cuantos avisos de estilo en ficheros ya escritos (líneas de más de 120
+  caracteres, expresiones multilínea); corregidos, `ktlintCheck` pasa en todo el proyecto.
+- **Changelog automático.** Al publicar una etiqueta, `publish.yml` escribe las notas de la versión
+  con los commits desde la etiqueta anterior. Lo que no esté en un mensaje de commit no se hizo.
+
+Tests: **97, 0 fallos** (16 nuevos: clasificación de fallos, calendario de esperas y comportamiento
+de los reintentos). `ktlintCheck` y `assembleFreeDynamic`: `BUILD SUCCESSFUL`.
+
 ### Pendiente
 
 - El **banner de Android TV** (`ic_banner`) sigue siendo el de Lemuroid: hay que rehacerlo con la
   marca de RetroCat cuando se toque el modo TV.
 - Los 6 ítems de UI acordados al principio (siguen aplazados).
 - Google Sign-In (OAuth, `drive.readonly`) si algún día hace falta acceso a carpetas **privadas**.
-- CI con tests y ktlint, changelog automático.
+- Modo **Big Picture / Android TV** y mandos.
 
 
 

@@ -1,5 +1,9 @@
 package com.swordfish.lemuroid.app.mobile.feature.store
 
+import com.swordfish.lemuroid.R
+import com.swordfish.lemuroid.app.shared.network.HttpFailure
+import com.swordfish.lemuroid.app.shared.network.NetworkFailure
+import com.swordfish.lemuroid.app.shared.network.withNetworkRetry
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -25,7 +29,11 @@ class DriveCatalogLoader(
         withContext(Dispatchers.IO) {
             val folderId =
                 DriveFolderListing.folderIdFrom(folderUrl)
-                    ?: throw StoreException(NOT_A_FOLDER_MESSAGE)
+                    ?: throw StoreException(
+                        "The link is not a Drive folder",
+                        failure = NetworkFailure.NOT_FOUND,
+                        messageRes = R.string.store_drive_not_a_folder,
+                    )
 
             val rootHtml = fetchFolder(folderId)
             val rootEntries = DriveFolderListing.parse(rootHtml)
@@ -65,7 +73,15 @@ class DriveCatalogLoader(
         }
     }
 
-    private fun fetchFolder(folderId: String): String {
+    /**
+     * The folder's listing page.
+     *
+     * Retried when the failure looks transient, because every folder in the tree costs one of these
+     * and one bad answer should not decide the fate of the whole catalog.
+     */
+    private suspend fun fetchFolder(folderId: String): String = withNetworkRetry { fetchFolderOnce(folderId) }
+
+    private fun fetchFolderOnce(folderId: String): String {
         val request =
             Request
                 .Builder()
@@ -77,12 +93,19 @@ class DriveCatalogLoader(
         val html =
             okHttpClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    throw StoreException("Google Drive respondió HTTP ${response.code}")
+                    throw StoreException("Drive answered HTTP ${response.code}", HttpFailure(response.code))
                 }
                 response.body?.string().orEmpty()
             }
 
-        if (LISTING_MARKER !in html) throw StoreException(NOT_LISTABLE_MESSAGE)
+        if (LISTING_MARKER !in html) {
+            throw StoreException(
+                "The folder listing could not be read",
+                failure = NetworkFailure.NOT_SHARED,
+                messageRes = R.string.store_drive_not_listable,
+            )
+        }
+
         return html
     }
 
@@ -92,9 +115,5 @@ class DriveCatalogLoader(
         const val DEFAULT_NAME = "Google Drive"
         const val MAX_DEPTH = 3
         const val USER_AGENT = "RetroCat/1.0 (Android)"
-
-        const val NOT_A_FOLDER_MESSAGE = "El enlace no apunta a una carpeta de Google Drive"
-        const val NOT_LISTABLE_MESSAGE =
-            "No se pudo leer la carpeta. Compártela como \"cualquier persona con el enlace\"."
     }
 }

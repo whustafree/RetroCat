@@ -7,6 +7,8 @@ import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
 import com.swordfish.lemuroid.app.mobile.shared.NotificationsManager
 import com.swordfish.lemuroid.app.shared.library.LibraryIndexScheduler
+import com.swordfish.lemuroid.app.shared.network.asNetworkFailure
+import com.swordfish.lemuroid.app.shared.network.networkErrorMessage
 import com.swordfish.lemuroid.app.utils.android.createSyncForegroundInfo
 import com.swordfish.lemuroid.lib.injection.AndroidWorkerInjection
 import com.swordfish.lemuroid.lib.injection.WorkerKey
@@ -15,7 +17,6 @@ import dagger.android.AndroidInjector
 import dagger.multibindings.IntoMap
 import kotlinx.coroutines.CancellationException
 import timber.log.Timber
-import java.io.IOException
 import javax.inject.Inject
 
 /**
@@ -47,7 +48,11 @@ class StoreDownloadWork(
 
         val game =
             StoreDownloadScheduler.readGame(inputData)
-                ?: return Result.failure(StoreDownloadScheduler.errorData("The request carried no game"))
+                ?: return Result.failure(
+                    StoreDownloadScheduler.errorData(
+                        applicationContext.networkErrorMessage(IllegalStateException("The request carried no game")),
+                    ),
+                )
 
         val destination = storeLibrary.destinationFor(game)
         if (destination.isFile) {
@@ -84,10 +89,12 @@ class StoreDownloadWork(
             Timber.w(t, "Downloading ${game.id} failed")
             notifications.cancelStoreDownload(notificationId)
 
-            if (t.isRetryable() && runAttemptCount + 1 < StoreDownloadScheduler.MAX_ATTEMPTS) {
+            // Trying again is only worth it for a failure that could go away, and only while there
+            // are attempts left; the user reads the reason in their language either way.
+            if (t.asNetworkFailure().retryable && runAttemptCount + 1 < StoreDownloadScheduler.MAX_ATTEMPTS) {
                 Result.retry()
             } else {
-                Result.failure(StoreDownloadScheduler.errorData(t.message ?: t.javaClass.simpleName))
+                Result.failure(StoreDownloadScheduler.errorData(applicationContext.networkErrorMessage(t)))
             }
         }
     }
@@ -107,21 +114,9 @@ class StoreDownloadWork(
         notifications.notifyStoreDownload(notificationId, title, fractionOf(progress))
     }
 
-    /**
-     * Whether trying again could help.
-     *
-     * A bad checksum will be bad again, so it fails straight away; a dropped connection or a Drive
-     * interstitial that did not resolve is worth another attempt.
-     */
-    private fun Throwable.isRetryable(): Boolean =
-        this is IOException ||
-            (this is StoreException && !message.orEmpty().startsWith(CHECKSUM_PREFIX))
-
     companion object {
         /** How often the notification and the reported progress are refreshed. */
         private const val PROGRESS_INTERVAL_MS = 500L
-
-        private const val CHECKSUM_PREFIX = "Checksum mismatch"
 
         private fun fractionOf(progress: StoreDownloader.Progress): Float? {
             val total = progress.totalBytes ?: return null

@@ -15,7 +15,11 @@ class DriveManifestBuilderTest {
         val files =
             listOf(
                 DriveFile(id = "rom-1", name = "007 - Everything or Nothing (U) (M3).gba", folderPath = listOf("Roms")),
-                DriveFile(id = "cover-1", name = "- 007 - Everything or Nothing (U) (M3).png", folderPath = listOf("Pack Covers")),
+                DriveFile(
+                    id = "cover-1",
+                    name = "- 007 - Everything or Nothing (U) (M3).png",
+                    folderPath = listOf("Pack Covers"),
+                ),
                 DriveFile(id = "rom-2", name = "Zooo (E) (M5).gba", folderPath = listOf("Roms")),
             )
 

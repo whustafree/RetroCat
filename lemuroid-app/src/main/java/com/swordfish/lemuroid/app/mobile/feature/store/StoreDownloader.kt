@@ -1,5 +1,7 @@
 package com.swordfish.lemuroid.app.mobile.feature.store
 
+import com.swordfish.lemuroid.app.shared.network.HttpFailure
+import com.swordfish.lemuroid.app.shared.network.NetworkFailure
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive
@@ -72,10 +74,15 @@ class StoreDownloader(
             val outcome =
                 okHttpClient.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) {
-                        throw StoreException("The download returned HTTP ${response.code}")
+                        throw StoreException("The download answered HTTP ${response.code}", HttpFailure(response.code))
                     }
 
-                    val body = response.body ?: throw StoreException("The download returned an empty body")
+                    val body =
+                        response.body
+                            ?: throw StoreException(
+                                "The download returned an empty body",
+                                failure = NetworkFailure.INVALID_CONTENT,
+                            )
                     val interstitial =
                         driveInterstitialUrl(
                             url = currentUrl,
@@ -97,7 +104,7 @@ class StoreDownloader(
             if (hop == MAX_INTERSTITIAL_HOPS) break
         }
 
-        throw StoreException("Google Drive did not hand over the file")
+        throw StoreException("Google Drive did not hand over the file", failure = NetworkFailure.SERVER)
     }
 
     /** Writes the whole body to [partial] and returns its lowercase hex sha256. */
@@ -158,7 +165,10 @@ class StoreDownloader(
     ) {
         val expected = game.sha256?.trim()?.lowercase().orEmpty()
         if (expected.isNotEmpty() && expected != actualHash) {
-            throw StoreException("Checksum mismatch: expected $expected but got $actualHash")
+            throw StoreException(
+                "Checksum mismatch: expected $expected but got $actualHash",
+                failure = NetworkFailure.CORRUPT,
+            )
         }
     }
 

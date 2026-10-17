@@ -21,7 +21,12 @@ class DriveDownloadPageTest {
 
     @Test
     fun `does not mistake the file for the warning page`() {
-        assertFalse(DriveDownloadPage.isWarning("https://drive.google.com/uc?export=download&id=x", "application/octet-stream"))
+        assertFalse(
+            DriveDownloadPage.isWarning(
+                "https://drive.google.com/uc?export=download&id=x",
+                "application/octet-stream",
+            ),
+        )
         assertFalse(DriveDownloadPage.isWarning("https://drive.google.com/uc?export=download&id=x", null))
         assertFalse(DriveDownloadPage.isWarning("https://example.com/rom.gba", "text/html"))
     }
