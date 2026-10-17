@@ -519,4 +519,30 @@ Build + tests: `BUILD SUCCESSFUL` y **63 tests, 0 fallos**.
 - Firmar/limpiar la caché de carátulas, gestión de almacenamiento, auto-actualización, icono propio,
   español completo, CI con tests y ktlint, changelog automático.
 
+---
+
+## 17-10-2026 (3) — Tienda: borrar juegos y saber cuánto ocupan
+
+Descargar mil juegos sin poder borrar ninguno no es una biblioteca, es una trampa. La ficha de un
+juego instalado ahora tiene **"Eliminar de la biblioteca"**, con confirmación antes de borrar nada:
+
+- `StoreLibrary.delete(game)` borra el ROM y, si quedara, el `.part` de una descarga interrumpida.
+  El juego **sigue en el catálogo**, así que se vuelve a descargar cuando se quiera.
+- Tras borrar se actualiza la lista de instalados y se lanza `LibraryIndexScheduler.scheduleLibrarySync`,
+  así desaparece de la biblioteca en vez de quedarse como una entrada rota.
+- Bajo el nombre del catálogo aparece **"1036 juegos · 2.1 GB instalados"**: el tamaño se calcula
+  recorriendo solo la carpeta de la tienda (`retrocat-store`), que es lo único que puede afirmarse
+  con honestidad; se recalcula al abrir y cuando termina o se borra una descarga, nunca en el hilo
+  principal.
+
+Build + tests: `BUILD SUCCESSFUL` y **63 tests, 0 fallos**.
+
+### Pendiente
+
+- Los 6 ítems de UI acordados al principio (siguen aplazados).
+- Google Sign-In (OAuth, `drive.readonly`) si algún día hace falta acceso a carpetas **privadas**.
+- Caché de carátulas, auto-actualización, icono propio, español completo, CI con tests y ktlint,
+  changelog automático.
+
+
 

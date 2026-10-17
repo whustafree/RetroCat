@@ -49,5 +49,12 @@
     <string name="store_selected_count">%1$d seleccionados</string>
     <string name="store_select_all">Seleccionar todo</string>
     <string name="store_selection_cancel">Cancelar selección</string>
+    <string name="store_catalog_count">%1$d juegos</string>
+    <string name="store_installed_size">%1$s instalados</string>
+    <string name="store_delete">Eliminar de la biblioteca</string>
+    <string name="store_delete_title">¿Eliminar este juego?</string>
+    <string name="store_delete_message">El ROM se borra de tu dispositivo. Sigue en el catálogo, así que puedes volver a descargarlo cuando quieras.</string>
+    <string name="store_delete_confirm">Eliminar</string>
+    <string name="store_delete_failed">No se pudo eliminar el juego</string>
     <string name="store_refresh_failed">No se pudo actualizar el catálogo</string>
 </resources>

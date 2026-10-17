@@ -31,6 +31,25 @@ class StoreLibrary(
     /** Ids of the games already sitting on disk, so the store can show them as installed. */
     fun downloadedIds(games: List<StoreGame>): Set<String> = games.filter { isDownloaded(it) }.map { it.id }.toSet()
 
+    /**
+     * Removes the ROM for [game] from disk.
+     *
+     * The half-downloaded sidecar goes with it: a leftover `.part` from an interrupted download
+     * would otherwise be looked at again by the next attempt.
+     */
+    fun delete(game: StoreGame): Boolean {
+        val file = destinationFor(game)
+        val deleted = runCatching { !file.exists() || file.delete() }.getOrDefault(false)
+        if (deleted) runCatching { File(file.parentFile, file.name + PARTIAL_SUFFIX).delete() }
+        return deleted
+    }
+
+    /** Room the store's own downloads take, for the storage line under the catalog name. */
+    fun installedSizeBytes(): Long =
+        runCatching {
+            downloadsRoot().walkTopDown().filter { it.isFile }.sumOf { it.length() }
+        }.getOrDefault(0L)
+
     private fun scannedRoot(): File {
         val preferenceKey = context.getString(com.swordfish.lemuroid.lib.R.string.pref_key_legacy_external_folder)
         val legacyFolder = SharedPreferencesHelper.getLegacySharedPreferences(context).getString(preferenceKey, null)
@@ -40,5 +59,8 @@ class StoreLibrary(
     companion object {
         const val STORE_FOLDER = "retrocat-store"
         private const val UNKNOWN_SYSTEM = "misc"
+
+        /** Same suffix the downloader writes its in-progress file with. */
+        private const val PARTIAL_SUFFIX = ".part"
     }
 }

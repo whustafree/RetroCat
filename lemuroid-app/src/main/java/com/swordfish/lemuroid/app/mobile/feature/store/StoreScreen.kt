@@ -139,6 +139,7 @@ fun StoreScreen(
             Column(modifier = Modifier.fillMaxSize()) {
                 StoreHeader(
                     name = state.name,
+                    summary = storeSummary(state),
                     loading = state.loading,
                     viewMode = state.viewMode,
                     onToggleViewMode = viewModel::toggleViewMode,
@@ -184,6 +185,7 @@ fun StoreScreen(
                 onDownload = { viewModel.download(game) },
                 onCancel = { viewModel.cancelDownload(game) },
                 onRetry = { viewModel.retryDownload(game) },
+                onDelete = { viewModel.delete(game) },
             )
         }
 
@@ -382,9 +384,24 @@ private val StoreSource.sourceLabelRes: Int
             StoreSource.DRIVE_FOLDER -> R.string.store_source_drive
         }
 
+/**
+ * The line under the catalog name: how many games there are and how much room they take.
+ *
+ * The store's own folder is the only part this can honestly report, so it says "installed" rather
+ * than guessing at the whole device.
+ */
+@Composable
+private fun storeSummary(state: StoreUiState): String {
+    val games = stringResource(R.string.store_catalog_count, state.totalGames)
+    if (state.installedBytes <= 0L) return games
+
+    return "$games · ${stringResource(R.string.store_installed_size, formatBytes(state.installedBytes))}"
+}
+
 @Composable
 private fun StoreHeader(
     name: String,
+    summary: String,
     loading: Boolean,
     viewMode: StoreViewMode,
     onToggleViewMode: () -> Unit,
@@ -399,13 +416,22 @@ private fun StoreHeader(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(
-            modifier = Modifier.weight(1f),
-            text = name.ifBlank { stringResource(R.string.store_title) },
-            style = MaterialTheme.typography.titleMedium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = name.ifBlank { stringResource(R.string.store_title) },
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            Text(
+                text = summary,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
 
         if (loading) {
             CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
@@ -1235,9 +1261,11 @@ private fun StoreGameDetailDialog(
     onDownload: () -> Unit,
     onCancel: () -> Unit,
     onRetry: () -> Unit,
+    onDelete: () -> Unit,
 ) {
     val context = LocalContext.current
     val systemName = remember(game.system) { systemLabel(context, game) }
+    var confirmingDelete by remember { mutableStateOf(false) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -1294,6 +1322,7 @@ private fun StoreGameDetailDialog(
                             onDownload = onDownload,
                             onCancel = onCancel,
                             onRetry = onRetry,
+                            onDelete = { confirmingDelete = true },
                         )
                     }
                 }
@@ -1306,6 +1335,33 @@ private fun StoreGameDetailDialog(
                     onClick = onDismiss,
                 ) {
                     Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.back))
+                }
+
+                if (confirmingDelete) {
+                    AlertDialog(
+                        onDismissRequest = { confirmingDelete = false },
+                        title = { Text(stringResource(R.string.store_delete_title)) },
+                        text = { Text(stringResource(R.string.store_delete_message)) },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    confirmingDelete = false
+                                    onDismiss()
+                                    onDelete()
+                                },
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.store_delete_confirm),
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { confirmingDelete = false }) {
+                                Text(stringResource(R.string.store_cancel))
+                            }
+                        },
+                    )
                 }
             }
         }
@@ -1365,6 +1421,7 @@ private fun StoreDownloadAction(
     onDownload: () -> Unit,
     onCancel: () -> Unit,
     onRetry: () -> Unit,
+    onDelete: () -> Unit,
 ) {
     val status = download?.status
 
@@ -1384,6 +1441,13 @@ private fun StoreDownloadAction(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+
+                TextButton(onClick = onDelete) {
+                    Text(
+                        text = stringResource(R.string.store_delete),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
             }
 
             download != null && status == StoreDownloadStatus.QUEUED -> {

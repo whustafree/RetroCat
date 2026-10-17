@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkInfo
+import com.swordfish.lemuroid.R
+import com.swordfish.lemuroid.app.shared.library.LibraryIndexScheduler
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,6 +57,8 @@ data class StoreUiState(
     val issues: List<String> = emptyList(),
     val downloads: Map<String, StoreDownload> = emptyMap(),
     val downloadedIds: Set<String> = emptySet(),
+    /** Room the downloaded games take, shown under the catalog name. */
+    val installedBytes: Long = 0L,
     /** The games the latest scan found that the previous one did not have. */
     val newIds: Set<String> = emptySet(),
     val query: String = "",
@@ -196,6 +200,42 @@ class StoreViewModel(
         StoreDownloadScheduler.cancel(appContext, game.id)
     }
 
+    /**
+     * Deletes an installed game from the device.
+     *
+     * The catalog entry stays, so the game can simply be downloaded again, and the library is
+     * re-scanned right away so it disappears from the shelf instead of lingering as a broken entry.
+     */
+    fun delete(game: StoreGame) {
+        viewModelScope.launch {
+            val deleted = withContext(Dispatchers.IO) { storeLibrary.delete(game) }
+
+            if (!deleted) {
+                _state.update { it.copy(error = appContext.getString(R.string.store_delete_failed)) }
+                return@launch
+            }
+
+            _state.update {
+                it.copy(
+                    downloadedIds = it.downloadedIds - game.id,
+                    downloads = it.downloads - game.id,
+                    selection = it.selection - game.id,
+                )
+            }
+
+            refreshInstalledSize()
+            LibraryIndexScheduler.scheduleLibrarySync(appContext)
+        }
+    }
+
+    /** Re-reads how much room the downloaded games take, off the main thread. */
+    private fun refreshInstalledSize() {
+        viewModelScope.launch {
+            val bytes = withContext(Dispatchers.IO) { storeLibrary.installedSizeBytes() }
+            _state.update { it.copy(installedBytes = bytes) }
+        }
+    }
+
     /** Turns a long press into the start of a multi selection. */
     fun startSelection(game: StoreGame) {
         _state.update { it.copy(selection = it.selection + game.id) }
@@ -293,6 +333,7 @@ class StoreViewModel(
         }
 
         val downloads = mutableMapOf<String, StoreDownload>()
+        val previousInstalledCount = _state.value.downloadedIds.size
         var installed = _state.value.downloadedIds
 
         latest.forEach { (gameId, info) ->
@@ -324,6 +365,8 @@ class StoreViewModel(
         }
 
         _state.update { it.copy(downloads = downloads, downloadedIds = installed) }
+
+        if (installed.size > previousInstalledCount) refreshInstalledSize()
     }
 
     /**
@@ -344,7 +387,10 @@ class StoreViewModel(
         newIds: Set<String>,
         loading: Boolean,
     ) {
-        val downloadedIds = withContext(Dispatchers.IO) { storeLibrary.downloadedIds(manifest.games) }
+        val (downloadedIds, installedBytes) =
+            withContext(Dispatchers.IO) {
+                storeLibrary.downloadedIds(manifest.games) to storeLibrary.installedSizeBytes()
+            }
 
         _state.update {
             it.copy(
@@ -355,6 +401,7 @@ class StoreViewModel(
                 groups = manifest.groups(),
                 issues = manifest.validate().map { issue -> formatIssue(issue) },
                 downloadedIds = downloadedIds,
+                installedBytes = installedBytes,
                 newIds = newIds,
             )
         }

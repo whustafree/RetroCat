@@ -289,6 +289,13 @@
     <string name="store_selected_count">%1$d selected</string>
     <string name="store_select_all">Select all</string>
     <string name="store_selection_cancel">Cancel selection</string>
+    <string name="store_catalog_count">%1$d games</string>
+    <string name="store_installed_size">%1$s installed</string>
+    <string name="store_delete">Delete from library</string>
+    <string name="store_delete_title">Delete this game?</string>
+    <string name="store_delete_message">The ROM is removed from your device. It stays in the catalog, so you can download it again at any time.</string>
+    <string name="store_delete_confirm">Delete</string>
+    <string name="store_delete_failed">The game could not be deleted</string>
     <string name="store_refresh_failed">The catalog could not be refreshed</string>
     <string name="store_download">Download</string>
     <string name="store_downloading">Downloading…</string>
