@@ -20,8 +20,8 @@ val localProperties =
 
 android {
     defaultConfig {
-        versionCode = 257
-        versionName = "1.19.4-retrocat" // Always remember to update Cores Tag!
+        versionCode = 258
+        versionName = "1.19.5-retrocat" // Always remember to update Cores Tag!
         applicationId = "com.retrocat.lemuroid"
     }
     flavorDimensions += listOf("opensource", "cores")
@@ -198,6 +198,7 @@ dependencies {
     implementation(deps.libs.startup)
     implementation(deps.libs.kotlin.serialization)
     implementation(deps.libs.kotlin.serializationJson)
+    implementation(deps.libs.androidx.ktx.splashscreen)
 
     implementation(platform(deps.libs.androidx.compose.composeBom))
     implementation(deps.libs.androidx.compose.material3)

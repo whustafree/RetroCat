@@ -589,11 +589,31 @@ empezaba a pedirse justo cuando su fila entraba en pantalla.
 
 Build + tests: `BUILD SUCCESSFUL` y **81 tests, 0 fallos**.
 
+---
+
+## 17-10-2026 (6) — Pantalla de arranque
+
+El nombre y el icono ya eran de RetroCat (desde el primer día: `retrocat_launcher` y
+`lemuroid_name = "RetroCat"`). Lo que faltaba era el arranque: se pasaba del icono de la pantalla de
+inicio a un hueco negro hasta que Compose dibujaba.
+
+- Se añade `androidx.core:core-splashscreen` y un tema `LemuroidMaterialTheme.Splash`: el fondo
+  oscuro de siempre (`#0A0B18`) con la marca del icono. `MainActivity` lo instala con
+  `installSplashScreen()`.
+- En Android 12+ la dibuja el sistema; por debajo, la librería la replica, así que el arranque se ve
+  igual desde Android 6.
+- No se retiene a propósito: se va en cuanto hay un primer fotograma. Bloques de carga no, que esto
+  es una consola.
+
+Build, APK (`assembleFreeDynamic`) y tests: `BUILD SUCCESSFUL` y **81 tests, 0 fallos**.
+
 ### Pendiente
 
+- El **banner de Android TV** (`ic_banner`) sigue siendo el de Lemuroid: hay que rehacerlo con la
+  marca de RetroCat cuando se toque el modo TV.
 - Los 6 ítems de UI acordados al principio (siguen aplazados).
 - Google Sign-In (OAuth, `drive.readonly`) si algún día hace falta acceso a carpetas **privadas**.
-- Icono propio, español completo, CI con tests y ktlint, changelog automático.
+- Español completo, CI con tests y ktlint, changelog automático.
 
 
 

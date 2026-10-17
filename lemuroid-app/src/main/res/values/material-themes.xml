@@ -35,6 +35,15 @@
         <item name="elevationOverlayColor">?attr/colorOnSurface</item>
     </style>
 
+    <!-- The launch screen: what the system shows from the moment the icon is tapped until the
+         library is on screen. The RetroCat mark over the usual dark background, then the normal
+         theme takes over. -->
+    <style name="LemuroidMaterialTheme.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/md_theme_dark_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/retrocat_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/LemuroidMaterialTheme</item>
+    </style>
+
     <style name="LemuroidMaterialTheme.Invisible" parent="LemuroidMaterialTheme">
         <item name="android:background">#00000000</item>
         <item name="android:windowNoTitle">true</item>

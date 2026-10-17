@@ -27,6 +27,7 @@ object deps {
         const val composeBom      = "2024.02.02"
         const val kotlinExtension = "1.4.6"
         const val padkit          = "1.0.0-beta1"
+        const val splashscreen    = "1.0.1"
 
         // Make sure this is compatible with current bom versions:
         // https://developer.android.com/jetpack/compose/bom/bom-mapping
@@ -50,6 +51,7 @@ object deps {
                 const val core = "androidx.core:core-ktx:1.8.0"
                 const val coreKtx = "androidx.core:core-ktx:1.8.0"
                 const val collection = "androidx.collection:collection-ktx:1.1.0"
+                const val splashscreen = "androidx.core:core-splashscreen:${versions.splashscreen}"
             }
             object lifecycle {
                 const val commonJava8 = "androidx.lifecycle:lifecycle-common-java8:${versions.lifecycle}"

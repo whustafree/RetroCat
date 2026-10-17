@@ -43,6 +43,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -184,6 +185,9 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Hands the launch screen (the theme declared on the activity) over to the library, which
+        // keeps it up until the first frame and backports the same look below Android 12.
+        installSplashScreen()
         enableEdgeToEdge(
             SystemBarStyle.dark(Color.TRANSPARENT),
             SystemBarStyle.dark(Color.TRANSPARENT),
