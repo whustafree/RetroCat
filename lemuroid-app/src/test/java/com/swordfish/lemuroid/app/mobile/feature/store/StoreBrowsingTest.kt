@@ -166,6 +166,39 @@ class StoreBrowsingTest {
         assertFalse(all.isEmpty())
     }
 
+    @Test
+    fun `preloads ahead and behind the viewport`() {
+        assertEquals(0..40, coverPreloadRange(firstVisible = 8, lastVisible = 16, size = 1000, ahead = 24, behind = 8))
+    }
+
+    @Test
+    fun `preload stops at the start of the list`() {
+        val range = coverPreloadRange(firstVisible = 0, lastVisible = 5, size = 1000)
+
+        assertEquals(0, range.first)
+        assertEquals(29, range.last)
+    }
+
+    @Test
+    fun `preload stops at the end of the list`() {
+        val range = coverPreloadRange(firstVisible = 995, lastVisible = 999, size = 1000)
+
+        assertEquals(987, range.first)
+        assertEquals(999, range.last)
+    }
+
+    @Test
+    fun `preload of an empty list is empty`() {
+        assertTrue(coverPreloadRange(firstVisible = 0, lastVisible = 0, size = 0).isEmpty())
+    }
+
+    @Test
+    fun `preload covers a list shorter than the window`() {
+        val range = coverPreloadRange(firstVisible = 0, lastVisible = 2, size = 3)
+
+        assertEquals(0..2, range)
+    }
+
     private fun game(
         id: String,
         title: String,

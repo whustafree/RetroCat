@@ -572,11 +572,28 @@ Ficheros nuevos: `update/UpdateVersions.kt`, `update/UpdateRepository.kt`, `upda
 
 Build + tests: `BUILD SUCCESSFUL` y **76 tests, 0 fallos**.
 
+---
+
+## 17-10-2026 (5) — Carátulas: precarga
+
+Con mil juegos en la lista, desplazarse rápido era encontrarse con recuadros grises: cada carátula
+empezaba a pedirse justo cuando su fila entraba en pantalla.
+
+- Ahora se piden **un poco por delante y por detrás** de lo visible (24 y 8 filas), así que al llegar
+  a una zona la imagen ya está en disco. La caché de disco ya existía (`CoverUtils.buildImageLoader`);
+  lo que faltaba era pedirlas antes de que hicieran falta.
+- Quién se pide es aritmética pura (`coverPreloadRange`): al principio o al final de la lista no se
+  puede pedir una fila que no existe, y una lista vacía no pide nada. Cubierto por tests.
+- El aviso de problemas del catálogo es un elemento más de la lista, así que se descuenta al traducir
+  "fila visible" a "juego".
+
+Build + tests: `BUILD SUCCESSFUL` y **81 tests, 0 fallos**.
+
 ### Pendiente
 
 - Los 6 ítems de UI acordados al principio (siguen aplazados).
 - Google Sign-In (OAuth, `drive.readonly`) si algún día hace falta acceso a carpetas **privadas**.
-- Caché de carátulas, icono propio, español completo, CI con tests y ktlint, changelog automático.
+- Icono propio, español completo, CI con tests y ktlint, changelog automático.
 
 
 

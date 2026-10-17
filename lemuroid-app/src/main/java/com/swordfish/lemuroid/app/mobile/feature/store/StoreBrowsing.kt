@@ -135,6 +135,33 @@ fun List<StoreRow>.letterIndex(): List<Pair<String, Int>> =
         (row as? StoreRow.LetterHeader)?.let { it.letter to index }
     }
 
+/** How many rows of covers are fetched below the viewport. */
+const val COVER_PRELOAD_AHEAD = 24
+
+/** And how many above it, so scrolling back up does not have to go out again. */
+const val COVER_PRELOAD_BEHIND = 8
+
+/**
+ * The rows whose covers are worth fetching for a viewport, clamped to the list.
+ *
+ * Kept here rather than in the screen because the interesting part is the arithmetic: a viewport at
+ * either end of a thousand-entry catalog must not ask for rows that do not exist.
+ */
+fun coverPreloadRange(
+    firstVisible: Int,
+    lastVisible: Int,
+    size: Int,
+    ahead: Int = COVER_PRELOAD_AHEAD,
+    behind: Int = COVER_PRELOAD_BEHIND,
+): IntRange {
+    if (size <= 0) return IntRange.EMPTY
+
+    val start = (firstVisible - behind).coerceIn(0, size - 1)
+    val end = (lastVisible + ahead).coerceIn(0, size - 1)
+
+    return if (end < start) IntRange.EMPTY else start..end
+}
+
 private val DIACRITICS = Regex("\\p{Mn}+")
 
 /** Lowercase with accents stripped, so "Pokemon" finds "Pokémon". */

@@ -63,6 +63,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,10 +80,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
+import coil.imageLoader
+import coil.request.ImageRequest
 import com.swordfish.lemuroid.R
 import com.swordfish.lemuroid.lib.library.GameSystem
 import com.swordfish.lemuroid.lib.library.MetaSystemID
 import com.swordfish.lemuroid.lib.library.SystemID
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 private val TILE_WIDTH = 120.dp
@@ -96,6 +100,13 @@ private val LETTER_INDEX_WIDTH = 26.dp
 
 /** How many manifest warnings to spell out before the list stops being useful. */
 private const val MAX_SHOWN_ISSUES = 5
+
+/**
+ * Size a preloaded cover is decoded at. It is only there to warm Coil's cache, so it does not need
+ * to match the row exactly: the same image is fetched once and decoded again at the size the row
+ * asks for.
+ */
+private const val COVER_PRELOAD_SIZE_PX = 256
 
 /**
  * The store: a remote catalog of downloadable games, laid out as one shelf per system.
@@ -781,6 +792,38 @@ private fun StoreGameList(
             )
         }
     val index = remember(rows) { rows.letterIndex() }
+
+    // Covers are fetched a little ahead of the finger. Coil already keeps them on disk, so this only
+    // ever costs anything on the first pass through the catalog; after that a fast scroll meets
+    // covers that are already there instead of grey boxes.
+    val context = LocalContext.current
+    val imageLoader = context.imageLoader
+    // The warnings banner is an extra item at the top of the list, so the visible indices are
+    // shifted by one when it is on screen.
+    val rowOffset = if (state.issues.isNotEmpty()) 1 else 0
+    LaunchedEffect(imageLoader, rows) {
+        snapshotFlow {
+            val visible = listState.layoutInfo.visibleItemsInfo
+            (visible.firstOrNull()?.index ?: 0) to (visible.lastOrNull()?.index ?: 0)
+        }
+            .distinctUntilChanged()
+            .collect { (firstVisible, lastVisible) ->
+                coverPreloadRange(firstVisible - rowOffset, lastVisible - rowOffset, rows.size)
+                    .forEach { index ->
+                        val row = rows.getOrNull(index)
+                        if (row is StoreRow.GameRow) {
+                            row.game.coverUrl?.let { url ->
+                                imageLoader.enqueue(
+                                    ImageRequest.Builder(context)
+                                        .data(url)
+                                        .size(COVER_PRELOAD_SIZE_PX)
+                                        .build(),
+                                )
+                            }
+                        }
+                    }
+            }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
