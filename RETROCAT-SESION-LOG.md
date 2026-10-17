@@ -459,3 +459,64 @@ Ficheros tocados: `StorePreferences.kt` (enum `StoreViewMode` + propiedad), `Sto
 
 Build + tests: `BUILD SUCCESSFUL` y 47 tests, 0 fallos (31 de la tienda).
 
+---
+
+## 17-10-2026 — Tienda: buscar, filtrar, ordenar, índice A-Z y caché del catálogo
+
+La tienda tenía 1036 juegos y ninguna herramienta para navegarlos. Esta etapa le da las que ya
+tenía la biblioteca y dos que no tenía:
+
+- **Buscador**: coincide con **todas** las palabras de la consulta, ignorando mayúsculas y
+  acentos ("zelda minish" encuentra *The Minish Cap*).
+- **Filtros por estado**: todos / nuevos / sin instalar / instalados.
+- **Orden**: nombre, más recientes, tamaño.
+- **Cabeceras de letra y tira A-Z** a la derecha de la lista: se salta a una letra de un toque.
+- **Insignia NUEVO**: los juegos que la última consulta trajo y la anterior no. La primera consulta
+  de todas no marca nada, para que la insignia signifique algo desde la segunda.
+- **Caché del catálogo en disco** (`files/store-catalog/<sha256(origen)>.json`): la tienda abre con
+  lo último que se vio y sigue funcionando sin conexión. Si la actualización falla habiendo catálogo
+  en pantalla, sale un aviso arriba en vez de dejar la lista vacía.
+
+Ficheros nuevos: `StoreBrowsing.kt` (lógica pura: filtros, órdenes, filas y letras) y
+`StoreCatalogCache.kt`. `StoreBrowsingTest.kt` la cubre con 16 casos de JUnit a pelo (JVM, sin
+Android). Commit `f0762e5`.
+
+Build + tests: `BUILD SUCCESSFUL` y **63 tests, 0 fallos**.
+
+---
+
+## 17-10-2026 (2) — Tienda: descargas en segundo plano y descarga por lotes
+
+Antes la descarga vivía dentro de la pantalla: salir de la pestaña Tienda o que Android matara el
+proceso la cortaba. Ahora cada ROM es un **`StoreDownloadWork` de WorkManager**:
+
+- **Sobrevive a todo**: WorkManager conserva el trabajo, lo reintenta con espera exponencial (hasta
+  3 intentos) y reanuda lo que quede pendiente cuando vuelve la conexión (restricción
+  `NetworkType.CONNECTED`).
+- **Notificación de progreso** en primer plano, una por juego (id propio por juego, así dos
+  descargas simultáneas no se pisan), con barra determinada si Drive anuncia el tamaño.
+- **Reintento solo si tiene sentido**: un `IOException` o un fallo de Drive se reintenta; un
+  **checksum que no cuadra no**, porque volvería a fallar igual.
+- **Cancelar** desde el detalle del juego: borra el `.part`, así que no queda basura.
+- **Descarga por lotes**: mantén pulsado un juego para empezar una selección, toca los que quieras
+  (o "Seleccionar todo"), y "Descargar" encola todos los que falten. La barra de selección
+  sustituye al buscador mientras se eligen. La lista es obligatoria en modo selección: en una
+  estantería de carátulas no cabe una casilla.
+- La pantalla recibe el estado de WorkManager (`getWorkInfosByTagLiveData`, convertido a `Flow`) y
+  lo pinta: *En cola*, *Descargando… 42 % · 1.5 MB / 3.0 MB*, instalado o error con botón
+  **Reintentar**. Un juego puede tener varios trabajos registrados (un intento fallido y otro
+  nuevo), así que gana el estado más avanzado, no el último de la lista.
+
+Ficheros nuevos: `StoreDownloadWork.kt` y `StoreDownloadScheduler.kt`. `StoreViewModel` ya no
+descarga: encola y refleja. La notificación se apoya en `NotificationsManager` (canal ya existente).
+
+Build + tests: `BUILD SUCCESSFUL` y **63 tests, 0 fallos**.
+
+### Pendiente
+
+- Los 6 ítems de UI acordados al principio (siguen aplazados).
+- Google Sign-In (OAuth, `drive.readonly`) si algún día hace falta acceso a carpetas **privadas**.
+- Firmar/limpiar la caché de carátulas, gestión de almacenamiento, auto-actualización, icono propio,
+  español completo, CI con tests y ktlint, changelog automático.
+
+

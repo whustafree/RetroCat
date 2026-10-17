@@ -127,6 +127,54 @@ class NotificationsManager(private val applicationContext: Context) {
         return builder.build()
     }
 
+    /**
+     * Progress of a store download.
+     *
+     * [fraction] is null while the server has not announced a size yet, which shows as an
+     * indeterminate bar instead of a bar stuck at zero.
+     */
+    fun storeDownloadNotification(
+        title: String,
+        fraction: Float?,
+    ): Notification {
+        createDefaultNotificationChannel()
+
+        val builder =
+            NotificationCompat.Builder(applicationContext, DEFAULT_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_lemuroid_tiny)
+                .setContentTitle(applicationContext.getString(R.string.store_downloading))
+                .setContentText(title)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setOnlyAlertOnce(true)
+                .setOngoing(true)
+
+        if (fraction == null) {
+            builder.setProgress(0, 0, true)
+        } else {
+            builder.setProgress(PROGRESS_MAX, (fraction * PROGRESS_MAX).toInt(), false)
+        }
+
+        return builder.build()
+    }
+
+    fun notifyStoreDownload(
+        notificationId: Int,
+        title: String,
+        fraction: Float?,
+    ) {
+        val manager =
+            ContextCompat.getSystemService(applicationContext, NotificationManager::class.java)
+                ?: return
+        manager.notify(notificationId, storeDownloadNotification(title, fraction))
+    }
+
+    fun cancelStoreDownload(notificationId: Int) {
+        val manager =
+            ContextCompat.getSystemService(applicationContext, NotificationManager::class.java)
+                ?: return
+        manager.cancel(notificationId)
+    }
+
     private fun createDefaultNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = applicationContext.getString(R.string.notification_channel_name)
@@ -141,6 +189,9 @@ class NotificationsManager(private val applicationContext: Context) {
 
     companion object {
         const val DEFAULT_CHANNEL_ID = "DEFAULT_CHANNEL_ID"
+
+        /** Resolution the download notification reports its progress against. */
+        private const val PROGRESS_MAX = 100
 
         const val LIBRARY_INDEXING_NOTIFICATION_ID = 1
         const val SAVE_SYNC_NOTIFICATION_ID = 2

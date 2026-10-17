@@ -145,4 +145,9 @@ object StoreManifestCodec {
     fun parse(text: String): StoreManifest = json.decodeFromString(StoreManifest.serializer(), text)
 
     fun serialize(manifest: StoreManifest): String = json.encodeToString(StoreManifest.serializer(), manifest)
+
+    /** A single game, used to hand one download to WorkManager through its input data. */
+    fun encodeGame(game: StoreGame): String = json.encodeToString(StoreGame.serializer(), game)
+
+    fun decodeGame(text: String): StoreGame = json.decodeFromString(StoreGame.serializer(), text)
 }

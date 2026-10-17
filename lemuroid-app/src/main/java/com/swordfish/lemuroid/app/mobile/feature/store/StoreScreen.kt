@@ -1,8 +1,10 @@
 package com.swordfish.lemuroid.app.mobile.feature.store
 
 import android.content.Context
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,11 +34,13 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -142,7 +146,14 @@ fun StoreScreen(
                     onEditUrl = { editingUrl = true },
                 )
 
-                if (!state.isEmpty) {
+                if (state.selectionMode) {
+                    StoreSelectionBar(
+                        count = state.selection.size,
+                        onCancel = viewModel::clearSelection,
+                        onSelectAll = viewModel::selectAll,
+                        onDownload = viewModel::downloadSelection,
+                    )
+                } else if (!state.isEmpty) {
                     StoreSearchBar(query = state.query, onQueryChange = viewModel::changeQuery)
 
                     StoreFilterRow(
@@ -157,6 +168,8 @@ fun StoreScreen(
                     groups = groups,
                     listState = listState,
                     onGameClick = { selectedGame = it },
+                    onGameLongClick = viewModel::startSelection,
+                    onToggleSelection = viewModel::toggleSelection,
                     onClearFilters = viewModel::clearFilters,
                 )
             }
@@ -169,6 +182,8 @@ fun StoreScreen(
                 downloaded = game.id in state.downloadedIds,
                 onDismiss = { selectedGame = null },
                 onDownload = { viewModel.download(game) },
+                onCancel = { viewModel.cancelDownload(game) },
+                onRetry = { viewModel.retryDownload(game) },
             )
         }
 
@@ -182,6 +197,63 @@ fun StoreScreen(
                     viewModel.saveLocation(source, url)
                 },
             )
+        }
+    }
+}
+
+/**
+ * The bar that replaces the search row while games are being ticked for a bulk download.
+ *
+ * Selecting is a mode rather than a floating button: with a thousand entries the useful action is
+ * "pick a bunch and fetch them", and a mode makes it obvious which games are queued and how to
+ * leave.
+ */
+@Composable
+private fun StoreSelectionBar(
+    count: Int,
+    onCancel: () -> Unit,
+    onSelectAll: () -> Unit,
+    onDownload: () -> Unit,
+) {
+    Surface(color = MaterialTheme.colorScheme.surfaceVariant) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onCancel) {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = stringResource(R.string.store_selection_cancel),
+                )
+            }
+
+            Text(
+                modifier = Modifier.weight(1f),
+                text = stringResource(R.string.store_selected_count, count),
+                style = MaterialTheme.typography.titleSmall,
+            )
+
+            TextButton(onClick = onSelectAll) {
+                Text(stringResource(R.string.store_select_all))
+            }
+
+            TextButton(
+                onClick = onDownload,
+                enabled = count > 0,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Download,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Text(
+                    modifier = Modifier.padding(start = 6.dp),
+                    text = stringResource(R.string.store_download),
+                )
+            }
         }
     }
 }
@@ -371,6 +443,8 @@ private fun StoreBody(
     groups: List<StoreGroup>,
     listState: LazyListState,
     onGameClick: (StoreGame) -> Unit,
+    onGameLongClick: (StoreGame) -> Unit,
+    onToggleSelection: (StoreGame) -> Unit,
     onClearFilters: () -> Unit,
 ) {
     when {
@@ -396,6 +470,17 @@ private fun StoreBody(
                             }
                         }
                     }
+                } else if (state.selectionMode) {
+                    // Picking several games is always done on the list, whatever the catalog was
+                    // being shown as: a shelf of covers has nowhere to put a tick.
+                    StoreGameList(
+                        state = state,
+                        groups = groups,
+                        listState = listState,
+                        onGameClick = onToggleSelection,
+                        onGameLongClick = onGameLongClick,
+                        onToggleSelection = onToggleSelection,
+                    )
                 } else {
                     when (state.viewMode) {
                         StoreViewMode.LIST ->
@@ -404,9 +489,17 @@ private fun StoreBody(
                                 groups = groups,
                                 listState = listState,
                                 onGameClick = onGameClick,
+                                onGameLongClick = onGameLongClick,
+                                onToggleSelection = onToggleSelection,
                             )
 
-                        StoreViewMode.SHELVES -> StoreShelves(state = state, groups = groups, onGameClick = onGameClick)
+                        StoreViewMode.SHELVES ->
+                            StoreShelves(
+                                state = state,
+                                groups = groups,
+                                onGameClick = onGameClick,
+                                onGameLongClick = onGameLongClick,
+                            )
                     }
                 }
             }
@@ -606,6 +699,7 @@ private fun StoreShelves(
     state: StoreUiState,
     groups: List<StoreGroup>,
     onGameClick: (StoreGame) -> Unit,
+    onGameLongClick: (StoreGame) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -625,6 +719,7 @@ private fun StoreShelves(
                 downloadedIds = state.downloadedIds,
                 newIds = state.newIds,
                 onGameClick = onGameClick,
+                onGameLongClick = onGameLongClick,
             )
         }
     }
@@ -643,6 +738,8 @@ private fun StoreGameList(
     groups: List<StoreGroup>,
     listState: LazyListState,
     onGameClick: (StoreGame) -> Unit,
+    onGameLongClick: (StoreGame) -> Unit,
+    onToggleSelection: (StoreGame) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
 
@@ -689,7 +786,11 @@ private fun StoreGameList(
                             isNew = row.isNew,
                             download = state.downloads[row.game.id],
                             downloaded = row.game.id in state.downloadedIds,
+                            selecting = state.selectionMode,
+                            selected = row.game.id in state.selection,
                             onClick = { onGameClick(row.game) },
+                            onLongClick = { onGameLongClick(row.game) },
+                            onToggle = { onToggleSelection(row.game) },
                         )
                 }
             }
@@ -780,13 +881,18 @@ private fun StoreSystemHeader(
 }
 
 /** One row of the list: a small cover, the title and the state of its download. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun StoreGameRow(
     game: StoreGame,
     isNew: Boolean,
     download: StoreDownload?,
     downloaded: Boolean,
+    selecting: Boolean,
+    selected: Boolean,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    onToggle: () -> Unit,
 ) {
     val status = download?.status
 
@@ -794,10 +900,17 @@ private fun StoreGameRow(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onClick)
+                .combinedClickable(onClick = onClick, onLongClick = onLongClick)
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (selecting) {
+            Checkbox(
+                checked = selected,
+                onCheckedChange = { onToggle() },
+            )
+        }
+
         Box(
             modifier =
                 Modifier
@@ -846,6 +959,13 @@ private fun StoreGameRow(
             }
 
             when {
+                status == StoreDownloadStatus.QUEUED ->
+                    Text(
+                        text = stringResource(R.string.store_queued),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
                 status == StoreDownloadStatus.DOWNLOADING && download != null -> {
                     StoreProgressBar(
                         modifier = Modifier.padding(top = 4.dp),
@@ -920,6 +1040,7 @@ private fun StoreShelf(
     downloadedIds: Set<String>,
     newIds: Set<String>,
     onGameClick: (StoreGame) -> Unit,
+    onGameLongClick: (StoreGame) -> Unit,
 ) {
     val context = LocalContext.current
     val title = remember(group.system) { context.getString(MetaSystemID.fromSystemID(group.system).titleResId) }
@@ -942,12 +1063,14 @@ private fun StoreShelf(
                     download = downloads[game.id],
                     downloaded = game.id in downloadedIds,
                     onClick = { onGameClick(game) },
+                    onLongClick = { onGameLongClick(game) },
                 )
             }
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun StoreGameTile(
     game: StoreGame,
@@ -955,13 +1078,14 @@ private fun StoreGameTile(
     download: StoreDownload?,
     downloaded: Boolean,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
 ) {
     Column(
         modifier =
             Modifier
                 .width(TILE_WIDTH)
                 .clip(MaterialTheme.shapes.large)
-                .clickable(onClick = onClick),
+                .combinedClickable(onClick = onClick, onLongClick = onLongClick),
     ) {
         Box(
             modifier =
@@ -1035,6 +1159,14 @@ private fun StoreBadge(
     ) {
         Box(contentAlignment = Alignment.Center) {
             when {
+                download?.status == StoreDownloadStatus.QUEUED ->
+                    Icon(
+                        imageVector = Icons.Filled.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
                 download?.status == StoreDownloadStatus.DOWNLOADING ->
                     CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
 
@@ -1101,6 +1233,8 @@ private fun StoreGameDetailDialog(
     downloaded: Boolean,
     onDismiss: () -> Unit,
     onDownload: () -> Unit,
+    onCancel: () -> Unit,
+    onRetry: () -> Unit,
 ) {
     val context = LocalContext.current
     val systemName = remember(game.system) { systemLabel(context, game) }
@@ -1158,6 +1292,8 @@ private fun StoreGameDetailDialog(
                             download = download,
                             downloaded = downloaded,
                             onDownload = onDownload,
+                            onCancel = onCancel,
+                            onRetry = onRetry,
                         )
                     }
                 }
@@ -1227,6 +1363,8 @@ private fun StoreDownloadAction(
     download: StoreDownload?,
     downloaded: Boolean,
     onDownload: () -> Unit,
+    onCancel: () -> Unit,
+    onRetry: () -> Unit,
 ) {
     val status = download?.status
 
@@ -1248,6 +1386,18 @@ private fun StoreDownloadAction(
                 )
             }
 
+            download != null && status == StoreDownloadStatus.QUEUED -> {
+                Text(
+                    text = stringResource(R.string.store_queued),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                TextButton(onClick = onCancel) {
+                    Text(stringResource(R.string.store_cancel_download))
+                }
+            }
+
             download != null && status == StoreDownloadStatus.DOWNLOADING -> {
                 StoreProgressBar(fraction = download.fraction)
 
@@ -1256,6 +1406,10 @@ private fun StoreDownloadAction(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+
+                TextButton(onClick = onCancel) {
+                    Text(stringResource(R.string.store_cancel_download))
+                }
             }
 
             download != null && status == StoreDownloadStatus.FAILED -> {
@@ -1265,7 +1419,7 @@ private fun StoreDownloadAction(
                     color = MaterialTheme.colorScheme.error,
                 )
 
-                Button(onClick = onDownload) {
+                Button(onClick = onRetry) {
                     Icon(Icons.Filled.Refresh, contentDescription = null)
                     Text(
                         modifier = Modifier.padding(start = 8.dp),

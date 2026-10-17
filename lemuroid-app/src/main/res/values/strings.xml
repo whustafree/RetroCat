@@ -284,6 +284,11 @@
     <string name="store_no_results">No game matches the search</string>
     <string name="store_clear_filters">Clear filters</string>
     <string name="store_new_badge">NEW</string>
+    <string name="store_queued">Queued</string>
+    <string name="store_cancel_download">Cancel download</string>
+    <string name="store_selected_count">%1$d selected</string>
+    <string name="store_select_all">Select all</string>
+    <string name="store_selection_cancel">Cancel selection</string>
     <string name="store_refresh_failed">The catalog could not be refreshed</string>
     <string name="store_download">Download</string>
     <string name="store_downloading">Downloading…</string>

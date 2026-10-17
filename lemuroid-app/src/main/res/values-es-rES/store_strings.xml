@@ -44,5 +44,10 @@
     <string name="store_no_results">Ningún juego coincide con la búsqueda</string>
     <string name="store_clear_filters">Quitar filtros</string>
     <string name="store_new_badge">NUEVO</string>
+    <string name="store_queued">En cola</string>
+    <string name="store_cancel_download">Cancelar descarga</string>
+    <string name="store_selected_count">%1$d seleccionados</string>
+    <string name="store_select_all">Seleccionar todo</string>
+    <string name="store_selection_cancel">Cancelar selección</string>
     <string name="store_refresh_failed">No se pudo actualizar el catálogo</string>
 </resources>

@@ -76,7 +76,6 @@ import com.swordfish.lemuroid.app.mobile.feature.settings.savesync.SaveSyncSetti
 import com.swordfish.lemuroid.app.mobile.feature.settings.savesync.SaveSyncSettingsViewModel
 import com.swordfish.lemuroid.app.mobile.feature.shortcuts.ShortcutsGenerator
 import com.swordfish.lemuroid.app.mobile.feature.store.StoreCatalogCache
-import com.swordfish.lemuroid.app.mobile.feature.store.StoreDownloader
 import com.swordfish.lemuroid.app.mobile.feature.store.StoreLibrary
 import com.swordfish.lemuroid.app.mobile.feature.store.StorePreferences
 import com.swordfish.lemuroid.app.mobile.feature.store.StoreRepository
@@ -145,9 +144,6 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
     lateinit var storeRepository: StoreRepository
 
     @Inject
-    lateinit var storeDownloader: StoreDownloader
-
-    @Inject
     lateinit var storePreferences: StorePreferences
 
     @Inject
@@ -173,7 +169,6 @@ class MainActivity : RetrogradeComponentActivity(), BusyActivity {
         StoreViewModel.Factory(
             applicationContext,
             storeRepository,
-            storeDownloader,
             storePreferences,
             storeLibrary,
             storeCatalogCache,

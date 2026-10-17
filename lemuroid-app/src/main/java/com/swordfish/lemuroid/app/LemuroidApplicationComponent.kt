@@ -19,6 +19,7 @@
 
 package com.swordfish.lemuroid.app
 
+import com.swordfish.lemuroid.app.mobile.feature.store.StoreDownloadWork
 import com.swordfish.lemuroid.app.shared.library.CoreUpdateWork
 import com.swordfish.lemuroid.app.shared.library.LibraryIndexWork
 import com.swordfish.lemuroid.app.shared.library.ScreenshotValidationWork
@@ -43,6 +44,7 @@ import dagger.android.support.AndroidSupportInjectionModule
         ChannelUpdateWork.Module::class,
         CoreUpdateWork.Module::class,
         CacheCleanerWork.Module::class,
+        StoreDownloadWork.Module::class,
         LemuroidTVApplicationModule::class,
     ],
 )
