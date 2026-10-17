@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
@@ -49,6 +50,9 @@ class MainTVActivity : BaseTVActivity(), BusyActivity {
     override fun isBusy(): Boolean = mainViewModel?.inProgress?.value ?: false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // The TV gets the same launch screen as the phone, handed to the library so it is kept up
+        // until the first frame and backported below Android 12.
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_tv_main)
 

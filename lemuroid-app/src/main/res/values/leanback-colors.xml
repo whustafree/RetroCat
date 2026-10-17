@@ -1,5 +1,7 @@
 <resources>
-    <color name="leanback_background">@color/surface_elevation_0dp</color>
+    <!-- The TV home sits on the same dark as the phone and the launch screen, so the two look like
+         the same app instead of two dark greys a shade apart. -->
+    <color name="leanback_background">@color/md_theme_dark_background</color>
     <color name="leanback_foreground">@color/surface_elevation_3dp</color>
     <color name="leanback_info">@color/surface_elevation_1dp</color>
 </resources>
