@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Los motivos por los que algo que habla con un servidor no ha funcionado. Se dicen en el idioma del
+  usuario, nunca el mensaje crudo de una excepción: el detalle técnico va al registro, no a la
+  pantalla.
+-->
+<resources>
+    <string name="store_drive_not_a_folder">El enlace no apunta a una carpeta de Google Drive</string>
+    <string name="store_drive_not_listable">No se pudo leer la carpeta. Compártela como «cualquier persona con el enlace»</string>
+
+    <string name="network_error_offline">Sin conexión. Comprueba la red e inténtalo de nuevo</string>
+    <string name="network_error_timeout">El servidor tardó demasiado en responder</string>
+    <string name="network_error_server">El servidor respondió con un error. Inténtalo de nuevo dentro de un rato</string>
+    <string name="network_error_not_found">Esa dirección no tiene nada</string>
+    <string name="network_error_content">No se pudo leer la respuesta</string>
+    <string name="network_error_corrupt">El archivo descargado no coincide con el catálogo</string>
+    <string name="network_error_not_shared">Esa carpeta no está compartida públicamente</string>
+    <string name="network_error_unknown">Algo salió mal. Inténtalo de nuevo</string>
+</resources>

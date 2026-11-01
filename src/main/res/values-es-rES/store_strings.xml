@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Cadena de la tienda en un fichero aparte: strings.xml esta guardado en
+    Windows-1252 y este fichero se escribe en UTF-8, que es lo que espera aapt2.
+    Android fusiona todos los XML de una carpeta values-*, asi que no hay
+    conflicto de claves.
+-->
+<resources>
+    <string name="store_title">Tienda</string>
+    <string name="store_setup_title">Configura la tienda</string>
+    <string name="store_setup_explanation">Pega el enlace de tu catálogo: un manifiesto JSON que hayas publicado, o la carpeta de Google Drive que compartas con el enlace. RetroCat lo lee para listar los juegos que puedes descargar en tu biblioteca.</string>
+    <string name="store_manifest_url">URL del manifiesto</string>
+    <string name="store_source_manifest">Manifest JSON</string>
+    <string name="store_source_drive">Carpeta de Google Drive</string>
+    <string name="store_drive_folder_url">Enlace de la carpeta</string>
+    <string name="store_change_location">Cambiar el origen del catálogo</string>
+    <string name="store_save">Guardar</string>
+    <string name="store_cancel">Cancelar</string>
+    <string name="store_refresh">Actualizar catálogo</string>
+    <string name="store_change_url">Cambiar la URL del manifiesto</string>
+    <string name="store_empty">Este catálogo está vacío</string>
+    <string name="store_download">Descargar</string>
+    <string name="store_downloading">Descargando…</string>
+    <string name="store_downloaded">Instalado</string>
+    <string name="store_retry">Reintentar</string>
+    <string name="store_installed_hint">El juego ya está en tu biblioteca.</string>
+    <string name="store_issues_title">Avisos del catálogo</string>
+    <string name="store_show_list">Ver en lista</string>
+    <string name="store_show_shelves">Ver en estanterías</string>
+    <plurals name="store_system_games">
+        <item quantity="one">%1$d juego</item>
+        <item quantity="other">%1$d juegos</item>
+    </plurals>
+    <string name="store_search_hint">Buscar juegos</string>
+    <string name="store_search_clear">Borrar búsqueda</string>
+    <string name="store_filter_all">Todos</string>
+    <string name="store_filter_new">Nuevos (%1$d)</string>
+    <string name="store_filter_not_downloaded">Sin instalar</string>
+    <string name="store_filter_downloaded">Instalados</string>
+    <string name="store_sort">Ordenar</string>
+    <string name="store_sort_name">A-Z</string>
+    <string name="store_sort_newest">Más recientes</string>
+    <string name="store_sort_size">Tamaño</string>
+    <string name="store_no_results">Ningún juego coincide con la búsqueda</string>
+    <string name="store_clear_filters">Quitar filtros</string>
+    <string name="store_new_badge">NUEVO</string>
+    <string name="store_queued">En cola</string>
+    <string name="store_cancel_download">Cancelar descarga</string>
+    <string name="store_selected_count">%1$d seleccionados</string>
+    <string name="store_select_all">Seleccionar todo</string>
+    <string name="store_selection_cancel">Cancelar selección</string>
+    <string name="store_catalog_count">%1$d juegos</string>
+    <string name="store_installed_size">%1$s instalados</string>
+    <string name="store_delete">Eliminar de la biblioteca</string>
+    <string name="store_delete_title">¿Eliminar este juego?</string>
+    <string name="store_delete_message">El ROM se borra de tu dispositivo. Sigue en el catálogo, así que puedes volver a descargarlo cuando quieras.</string>
+    <string name="store_delete_confirm">Eliminar</string>
+    <string name="store_delete_failed">No se pudo eliminar el juego</string>
+    <string name="store_refresh_failed">No se pudo actualizar el catálogo</string>
+    <string name="store_wifi_only">Solo por Wi-Fi</string>
+    <string name="store_downloads_queued">%1$d en cola</string>
+    <string name="store_downloads_downloading">%1$d descargando</string>
+    <string name="store_downloads_failed">%1$d fallidas</string>
+    <string name="store_downloads_retry_failed">Reintentar las fallidas</string>
+    <string name="store_downloads_cancel_all">Cancelar todo</string>
+    <string name="store_space_title">¿No cabe?</string>
+    <string name="store_space_message">Los juegos ocupan %1$s y solo quedan %2$s en el dispositivo.</string>
+    <string name="store_space_confirm">Descargar igualmente</string>
+</resources>
