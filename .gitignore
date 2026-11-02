@@ -1,1 +1,48 @@
+# Build directories
 /build
+build/
+out/
+dist/
+bin/
+gen/
+captures/
+classes/
+
+# Project files that may be tracked or generated
+projectFilesBackup/
+project.properties
+
+# macOS
+.DS_Store
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+
+# Emacs
+*.swp
+
+# CMake/Native build
+.cxx/
+.externalNativeBuild/
+
+# Gradle
+.gradle/
+local.properties
+
+# Android signing
+release.jks
+debug.keystore
+
+# Keystores: nunca deben subirse. El debug.keystore venía trackeado en el upstream.
+*.keystore
+*.jks
+keystore.properties
+
+# Binarios de build. Las APKs se publican como releases de GitHub, no en el árbol.
+*.apk
+*.aab
+
+# Kotlin
+.kotlin/

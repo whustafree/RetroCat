@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+
+  checks:
+    name: Tests and ktlint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # settings.gradle.kts includes ":bundled-cores" -> lemuroid-cores/bundled-cores
+      # unconditionally, so the folder has to exist before Gradle can configure the build.
+      # This repo has no .gitmodules, so checkout cannot fetch it: a partial (sparse) clone of
+      # that folder is enough, exactly as in publish.yml.
+      - name: Clone the emulator cores
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse \
+            https://github.com/Swordfish90/LemuroidCores.git lemuroid-cores
+          git -C lemuroid-cores sparse-checkout set bundled-cores
+
+      - name: set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      # Some variants are signed with the debug config even when only tests are run.
+      - name: Create the debug keystore
+        run: |
+          keytool -genkeypair -v \
+            -keystore debug.keystore \
+            -alias androiddebugkey \
+            -storepass android -keypass android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run the unit tests
+        run: ./gradlew testFreeDynamicDebugUnitTest --console=plain
+
+      - name: Run ktlint
+        run: ./gradlew ktlintCheck --console=plain
+
+      - name: Keep the test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: '**/build/reports/tests/testFreeDynamicDebugUnitTest/**'
+          if-no-files-found: ignore

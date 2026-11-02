@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Round variant of the RetroCat adaptive launcher icon. The round mask is applied by the
+  launcher, so it shares the same background/foreground layers as retrocat_launcher.xml.
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@mipmap/retrocat_launcher_background" />
+    <foreground android:drawable="@mipmap/retrocat_launcher_foreground" />
+    <!-- Themed icons (Android 13+). Same alpha silhouette as the foreground, tinted by the system. -->
+    <monochrome android:drawable="@mipmap/retrocat_launcher_monochrome" />
+</adaptive-icon>
