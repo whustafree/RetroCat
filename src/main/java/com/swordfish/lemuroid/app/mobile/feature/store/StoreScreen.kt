@@ -381,10 +381,12 @@ private fun StoreLocationDialog(
     initialSource: StoreSource,
     initialUrls: List<String>,
     onDismiss: () -> Unit,
-    onConfirm: (StoreSource, String) -> Unit,
+    onConfirm: (StoreSource, List<String>) -> Unit, // Cambiado a aceptar lista de URLs
 ) {
     return when (initialSource) {
-        StoreSource.MANIFEST -> manifestLocationDialog(initialUrls.firstOrNull() ?: "", onDismiss, onConfirm)
+        StoreSource.MANIFEST -> manifestLocationDialog(initialUrls.firstOrNull() ?: "", onDismiss, { source, url ->
+            onConfirm(source, listOf(url))
+        })
         StoreSource.DRIVE_FOLDER -> driveLocationsDialog(initialUrls, onDismiss, onConfirm)
     }
 }
@@ -393,7 +395,7 @@ private fun StoreLocationDialog(
 private fun manifestLocationDialog(
     initialUrl: String,
     onDismiss: () -> Unit,
-    onConfirm: (StoreSource, String) -> Unit,
+    onConfirm: (StoreSource, List<String>) -> Unit,
 ) {
     var url by rememberSaveable { mutableStateOf(initialUrl) }
 
@@ -413,7 +415,11 @@ private fun manifestLocationDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(if (url.isNotBlank()) StoreSource.MANIFEST else StoreSource.DRIVE_FOLDER, url) }, enabled = url.isNotBlank()) {
+            TextButton(onClick = { 
+                if (url.isNotBlank()) {
+                    onConfirm(StoreSource.MANIFEST, listOf(url))
+                }
+            }, enabled = url.isNotBlank()) {
                 Text(stringResource(R.string.store_save))
             }
         },
@@ -429,7 +435,7 @@ private fun manifestLocationDialog(
 private fun driveLocationsDialog(
     currentUrls: List<String>,
     onDismiss: () -> Unit,
-    onConfirm: (StoreSource, String) -> Unit,
+    onConfirm: (StoreSource, List<String>) -> Unit,
 ) {
     var newUrl by rememberSaveable { mutableStateOf("") }
 
@@ -443,7 +449,7 @@ private fun driveLocationsDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 // Lista existente de URLs Drive
-                DriveLocationsList(urls = urlsCopy, onRemove = { index ->
+                DriveLocationsList(urls = urlsCopy.map { it }, onRemove = { index ->
                     urlsCopy.removeAt(index)
                 })
 
@@ -459,10 +465,14 @@ private fun driveLocationsDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { url ->
-                if (url.isNotBlank()) {
-                    urlsCopy.add(url.trim())
-                    onConfirm(StoreSource.DRIVE_FOLDER, "")
+            TextButton(onClick = { 
+                // Confirmamos con TODAS las URLs (ya configuradas + la nueva que acabamos de añadir)
+                val allUrls = urlsCopy.toMutableList()
+                if (newUrl.isNotBlank()) {
+                    allUrls.add(newUrl.trim())
+                }
+                if (allUrls.isNotEmpty()) {
+                    onConfirm(StoreSource.DRIVE_FOLDER, allUrls)
                 }
             }, enabled = currentUrls.isNotEmpty() || newUrl.isNotBlank()) {
                 Text(stringResource(R.string.store_save))

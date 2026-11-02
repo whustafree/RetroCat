@@ -136,26 +136,26 @@ class StoreViewModel(
     }
 
     /** Points the store at a published manifest (or clears it when blank) and reloads it. */
-    fun saveManifestUrl(url: String) = saveLocation(StoreSource.MANIFEST, url)
+    fun saveManifestUrl(urls: List<String>) = saveLocation(StoreSource.MANIFEST, urls)
 
-    /** Points the store at a public Drive folder, whose contents become the catalog. */
-    fun saveDriveFolderUrl(url: String) = saveLocation(StoreSource.DRIVE_FOLDER, url)
+    /** Points the store at a public Drive folder (single URL), whose contents become the catalog. */
+    fun saveDriveFolderUrl(url: String) = saveLocation(StoreSource.DRIVE_FOLDER, listOf(url))
 
     /** Points the store at a new origin, drops the filters that no longer apply and reloads it. */
     fun saveLocation(
         source: StoreSource,
-        url: String,
+        urls: List<String>,
     ) {
         preferences.source = source
         when (source) {
-            StoreSource.MANIFEST -> preferences.manifestUrl = url
-            StoreSource.DRIVE_FOLDER -> preferences.driveFolderUrls = preferences.driveFolderUrls + url
+            StoreSource.MANIFEST -> preferences.manifestUrl = urls.firstOrNull()?.trim() ?: ""
+            StoreSource.DRIVE_FOLDER -> preferences.driveFolderUrls = urls
         }
 
         _state.update {
             it.copy(
                 source = source,
-                location = url.trim(),
+                location = urls.firstOrNull()?.trim() ?: "",
                 configured = preferences.isConfigured,
                 query = "",
                 statusFilter = StoreStatusFilter.ALL,
